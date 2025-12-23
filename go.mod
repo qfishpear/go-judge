@@ -71,6 +71,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
+replace github.com/criyle/go-judge/pb => ./pb
+
 retract (
 	// File descripter leak when multiple container fork at the same time
 	[v0.9.5, v1.1.4]
