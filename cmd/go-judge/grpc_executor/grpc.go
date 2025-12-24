@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/criyle/go-judge/cmd/go-judge/model"
@@ -113,6 +115,151 @@ func (e *execServer) FileDelete(c context.Context, f *pb.FileID) (*emptypb.Empty
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "file id does not exists: %q", f.GetFileID())
 	}
+	return &emptypb.Empty{}, nil
+}
+
+func (e *execServer) FileDownloadFromMinio(ctx context.Context, req *pb.DownloadFromMinioRequest) (*pb.DownloadFromMinioResponse, error) {
+	urls := req.GetPresignedGetUrls()
+	if len(urls) == 0 {
+		return pb.DownloadFromMinioResponse_builder{
+			FileIds: []string{},
+		}.Build(), nil
+	}
+
+	fileIds := make([]string, 0, len(urls))
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	success := false
+	tmpFilePath := ""
+
+	// Defer rollback if not all operations succeeded
+	defer func() {
+		if !success {
+			// Remove all successfully added files from filestore
+			for _, fileId := range fileIds {
+				e.fs.Remove(fileId)
+			}
+			if tmpFilePath != "" {
+				os.Remove(tmpFilePath)
+			}
+		}
+	}()
+
+	for _, downloadURL := range urls {
+		// Create HTTP GET request
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "failed to create request for URL %q: %v", downloadURL, err)
+		}
+
+		// Execute request
+		resp, err := client.Do(httpReq)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to download from %q: %v", downloadURL, err)
+		}
+
+		// Check status code
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			return nil, status.Errorf(codes.Internal, "failed to download from %q: status code %d", downloadURL, resp.StatusCode)
+		}
+
+		// Create temporary file in filestore
+		tmpFile, err := e.fs.New()
+		if err != nil {
+			resp.Body.Close()
+			return nil, status.Errorf(codes.Internal, "failed to create temporary file: %v", err)
+		}
+
+		// Store temporary file path for rollback
+		tmpFilePath = tmpFile.Name()
+
+		// Copy response body to file
+		if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to write downloaded content: %v", err)
+		}
+
+		if err := resp.Body.Close(); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to close response body: %v", err)
+		}
+
+		// Close file before adding to store
+		if err := tmpFile.Close(); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to close temporary file: %v", err)
+		}
+
+		// Add file to store with extracted filename
+		fileId, err := e.fs.Add("", tmpFile.Name())
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to add file to store: %v", err)
+		}
+
+		tmpFilePath = ""
+		fileIds = append(fileIds, fileId)
+	}
+
+	success = true
+
+	return pb.DownloadFromMinioResponse_builder{
+		FileIds: fileIds,
+	}.Build(), nil
+}
+
+func (e *execServer) FileUploadToMinio(ctx context.Context, req *pb.UploadToMinioRequest) (*emptypb.Empty, error) {
+	items := req.GetItems()
+	if len(items) == 0 {
+		return &emptypb.Empty{}, nil
+	}
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	for _, item := range items {
+		fileId := item.GetFileId()
+		presignedURL := item.GetPresignedPutUrl()
+
+		// Get file from filestore
+		name, file := e.fs.Get(fileId)
+		if file == nil {
+			return nil, status.Errorf(codes.NotFound, "file not found: %q", fileId)
+		}
+
+		// Convert file to reader
+		reader, err := envexec.FileToReader(file)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to read file %q: %v", fileId, err)
+		}
+
+		// Create HTTP PUT request
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, reader)
+		if err != nil {
+			reader.Close()
+			return nil, status.Errorf(codes.InvalidArgument, "failed to create request for file %q: %v", fileId, err)
+		}
+
+		// Set content type if we have a filename
+		if name != "" {
+			// Try to detect content type from filename extension
+			httpReq.Header.Set("Content-Type", "application/octet-stream")
+		}
+
+		// Execute request
+		resp, err := client.Do(httpReq)
+		reader.Close()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to upload file %q: %v", fileId, err)
+		}
+
+		// Check status code (200 or 204 are typically success for PUT)
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+			resp.Body.Close()
+			return nil, status.Errorf(codes.Internal, "failed to upload file %q: status code %d", fileId, resp.StatusCode)
+		}
+		resp.Body.Close()
+	}
+
 	return &emptypb.Empty{}, nil
 }
 
