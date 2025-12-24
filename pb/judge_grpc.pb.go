@@ -20,12 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Executor_Exec_FullMethodName       = "/pb.Executor/Exec"
-	Executor_ExecStream_FullMethodName = "/pb.Executor/ExecStream"
-	Executor_FileList_FullMethodName   = "/pb.Executor/FileList"
-	Executor_FileGet_FullMethodName    = "/pb.Executor/FileGet"
-	Executor_FileAdd_FullMethodName    = "/pb.Executor/FileAdd"
-	Executor_FileDelete_FullMethodName = "/pb.Executor/FileDelete"
+	Executor_Exec_FullMethodName                  = "/pb.Executor/Exec"
+	Executor_ExecStream_FullMethodName            = "/pb.Executor/ExecStream"
+	Executor_FileList_FullMethodName              = "/pb.Executor/FileList"
+	Executor_FileGet_FullMethodName               = "/pb.Executor/FileGet"
+	Executor_FileAdd_FullMethodName               = "/pb.Executor/FileAdd"
+	Executor_FileDelete_FullMethodName            = "/pb.Executor/FileDelete"
+	Executor_FileDownloadFromMinio_FullMethodName = "/pb.Executor/FileDownloadFromMinio"
+	Executor_FileUploadToMinio_FullMethodName     = "/pb.Executor/FileUploadToMinio"
 )
 
 // ExecutorClient is the client API for Executor service.
@@ -48,6 +50,12 @@ type ExecutorClient interface {
 	FileAdd(ctx context.Context, in *FileContent, opts ...grpc.CallOption) (*FileID, error)
 	// FileDelete deletes a file from the file store
 	FileDelete(ctx context.Context, in *FileID, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// FileDownloadFromMinio download the file from minio and store it in file store. The download works in batch mode.
+	// The presigned GET URLs are provided by the caller.
+	FileDownloadFromMinio(ctx context.Context, in *DownloadFromMinioRequest, opts ...grpc.CallOption) (*DownloadFromMinioResponse, error)
+	// FileUploadToMinio upload the file from file store to minio
+	// The presigned PUT URL is provided by the caller.
+	FileUploadToMinio(ctx context.Context, in *UploadToMinioRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type executorClient struct {
@@ -121,6 +129,26 @@ func (c *executorClient) FileDelete(ctx context.Context, in *FileID, opts ...grp
 	return out, nil
 }
 
+func (c *executorClient) FileDownloadFromMinio(ctx context.Context, in *DownloadFromMinioRequest, opts ...grpc.CallOption) (*DownloadFromMinioResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DownloadFromMinioResponse)
+	err := c.cc.Invoke(ctx, Executor_FileDownloadFromMinio_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *executorClient) FileUploadToMinio(ctx context.Context, in *UploadToMinioRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Executor_FileUploadToMinio_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ExecutorServer is the server API for Executor service.
 // All implementations must embed UnimplementedExecutorServer
 // for forward compatibility.
@@ -141,6 +169,12 @@ type ExecutorServer interface {
 	FileAdd(context.Context, *FileContent) (*FileID, error)
 	// FileDelete deletes a file from the file store
 	FileDelete(context.Context, *FileID) (*emptypb.Empty, error)
+	// FileDownloadFromMinio download the file from minio and store it in file store. The download works in batch mode.
+	// The presigned GET URLs are provided by the caller.
+	FileDownloadFromMinio(context.Context, *DownloadFromMinioRequest) (*DownloadFromMinioResponse, error)
+	// FileUploadToMinio upload the file from file store to minio
+	// The presigned PUT URL is provided by the caller.
+	FileUploadToMinio(context.Context, *UploadToMinioRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedExecutorServer()
 }
 
@@ -168,6 +202,12 @@ func (UnimplementedExecutorServer) FileAdd(context.Context, *FileContent) (*File
 }
 func (UnimplementedExecutorServer) FileDelete(context.Context, *FileID) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method FileDelete not implemented")
+}
+func (UnimplementedExecutorServer) FileDownloadFromMinio(context.Context, *DownloadFromMinioRequest) (*DownloadFromMinioResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FileDownloadFromMinio not implemented")
+}
+func (UnimplementedExecutorServer) FileUploadToMinio(context.Context, *UploadToMinioRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method FileUploadToMinio not implemented")
 }
 func (UnimplementedExecutorServer) mustEmbedUnimplementedExecutorServer() {}
 func (UnimplementedExecutorServer) testEmbeddedByValue()                  {}
@@ -287,6 +327,42 @@ func _Executor_FileDelete_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Executor_FileDownloadFromMinio_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadFromMinioRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutorServer).FileDownloadFromMinio(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Executor_FileDownloadFromMinio_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExecutorServer).FileDownloadFromMinio(ctx, req.(*DownloadFromMinioRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Executor_FileUploadToMinio_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadToMinioRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutorServer).FileUploadToMinio(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Executor_FileUploadToMinio_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExecutorServer).FileUploadToMinio(ctx, req.(*UploadToMinioRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Executor_ServiceDesc is the grpc.ServiceDesc for Executor service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -313,6 +389,14 @@ var Executor_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FileDelete",
 			Handler:    _Executor_FileDelete_Handler,
+		},
+		{
+			MethodName: "FileDownloadFromMinio",
+			Handler:    _Executor_FileDownloadFromMinio_Handler,
+		},
+		{
+			MethodName: "FileUploadToMinio",
+			Handler:    _Executor_FileUploadToMinio_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

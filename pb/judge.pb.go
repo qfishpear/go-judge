@@ -27,7 +27,7 @@ var File_judge_proto protoreflect.FileDescriptor
 const file_judge_proto_rawDesc = "" +
 	"\n" +
 	"\vjudge.proto\x12\x02pb\x1a\x1bgoogle/protobuf/empty.proto\x1a\rrequest.proto\x1a\x0eresponse.proto\x1a\x14stream_request.proto\x1a\x15stream_response.proto\x1a\n" +
-	"file.proto\x1a!google/protobuf/go_features.proto2\x9e\x02\n" +
+	"file.proto\x1a\vminio.proto\x1a!google/protobuf/go_features.proto2\xbb\x03\n" +
 	"\bExecutor\x12!\n" +
 	"\x04Exec\x12\v.pb.Request\x1a\f.pb.Response\x127\n" +
 	"\n" +
@@ -39,36 +39,45 @@ const file_judge_proto_rawDesc = "" +
 	".pb.FileID\x120\n" +
 	"\n" +
 	"FileDelete\x12\n" +
-	".pb.FileID\x1a\x16.google.protobuf.EmptyB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
+	".pb.FileID\x1a\x16.google.protobuf.Empty\x12T\n" +
+	"\x15FileDownloadFromMinio\x12\x1c.pb.DownloadFromMinioRequest\x1a\x1d.pb.DownloadFromMinioResponse\x12E\n" +
+	"\x11FileUploadToMinio\x12\x18.pb.UploadToMinioRequest\x1a\x16.google.protobuf.EmptyB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
 
 var file_judge_proto_goTypes = []any{
-	(*Request)(nil),        // 0: pb.Request
-	(*StreamRequest)(nil),  // 1: pb.StreamRequest
-	(*emptypb.Empty)(nil),  // 2: google.protobuf.Empty
-	(*FileID)(nil),         // 3: pb.FileID
-	(*FileContent)(nil),    // 4: pb.FileContent
-	(*Response)(nil),       // 5: pb.Response
-	(*StreamResponse)(nil), // 6: pb.StreamResponse
-	(*FileListType)(nil),   // 7: pb.FileListType
+	(*Request)(nil),                   // 0: pb.Request
+	(*StreamRequest)(nil),             // 1: pb.StreamRequest
+	(*emptypb.Empty)(nil),             // 2: google.protobuf.Empty
+	(*FileID)(nil),                    // 3: pb.FileID
+	(*FileContent)(nil),               // 4: pb.FileContent
+	(*DownloadFromMinioRequest)(nil),  // 5: pb.DownloadFromMinioRequest
+	(*UploadToMinioRequest)(nil),      // 6: pb.UploadToMinioRequest
+	(*Response)(nil),                  // 7: pb.Response
+	(*StreamResponse)(nil),            // 8: pb.StreamResponse
+	(*FileListType)(nil),              // 9: pb.FileListType
+	(*DownloadFromMinioResponse)(nil), // 10: pb.DownloadFromMinioResponse
 }
 var file_judge_proto_depIdxs = []int32{
-	0, // 0: pb.Executor.Exec:input_type -> pb.Request
-	1, // 1: pb.Executor.ExecStream:input_type -> pb.StreamRequest
-	2, // 2: pb.Executor.FileList:input_type -> google.protobuf.Empty
-	3, // 3: pb.Executor.FileGet:input_type -> pb.FileID
-	4, // 4: pb.Executor.FileAdd:input_type -> pb.FileContent
-	3, // 5: pb.Executor.FileDelete:input_type -> pb.FileID
-	5, // 6: pb.Executor.Exec:output_type -> pb.Response
-	6, // 7: pb.Executor.ExecStream:output_type -> pb.StreamResponse
-	7, // 8: pb.Executor.FileList:output_type -> pb.FileListType
-	4, // 9: pb.Executor.FileGet:output_type -> pb.FileContent
-	3, // 10: pb.Executor.FileAdd:output_type -> pb.FileID
-	2, // 11: pb.Executor.FileDelete:output_type -> google.protobuf.Empty
-	6, // [6:12] is the sub-list for method output_type
-	0, // [0:6] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: pb.Executor.Exec:input_type -> pb.Request
+	1,  // 1: pb.Executor.ExecStream:input_type -> pb.StreamRequest
+	2,  // 2: pb.Executor.FileList:input_type -> google.protobuf.Empty
+	3,  // 3: pb.Executor.FileGet:input_type -> pb.FileID
+	4,  // 4: pb.Executor.FileAdd:input_type -> pb.FileContent
+	3,  // 5: pb.Executor.FileDelete:input_type -> pb.FileID
+	5,  // 6: pb.Executor.FileDownloadFromMinio:input_type -> pb.DownloadFromMinioRequest
+	6,  // 7: pb.Executor.FileUploadToMinio:input_type -> pb.UploadToMinioRequest
+	7,  // 8: pb.Executor.Exec:output_type -> pb.Response
+	8,  // 9: pb.Executor.ExecStream:output_type -> pb.StreamResponse
+	9,  // 10: pb.Executor.FileList:output_type -> pb.FileListType
+	4,  // 11: pb.Executor.FileGet:output_type -> pb.FileContent
+	3,  // 12: pb.Executor.FileAdd:output_type -> pb.FileID
+	2,  // 13: pb.Executor.FileDelete:output_type -> google.protobuf.Empty
+	10, // 14: pb.Executor.FileDownloadFromMinio:output_type -> pb.DownloadFromMinioResponse
+	2,  // 15: pb.Executor.FileUploadToMinio:output_type -> google.protobuf.Empty
+	8,  // [8:16] is the sub-list for method output_type
+	0,  // [0:8] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_judge_proto_init() }
@@ -81,6 +90,7 @@ func file_judge_proto_init() {
 	file_stream_request_proto_init()
 	file_stream_response_proto_init()
 	file_file_proto_init()
+	file_minio_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
