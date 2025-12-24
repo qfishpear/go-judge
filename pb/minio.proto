@@ -1,0 +1,25 @@
+edition = "2023";
+
+package pb;
+import "google/protobuf/go_features.proto";
+
+option features.field_presence = IMPLICIT;
+option go_package = "github.com/criyle/go-judge/pb";
+option features.(pb.go).api_level = API_OPAQUE;
+
+message UploadItem {
+  string fileId = 1;
+  string presignedPutUrl = 2;
+}
+
+message UploadToMinioRequest {
+  repeated UploadItem items = 1;
+}
+
+message DownloadFromMinioRequest {
+  repeated string presignedGetUrls = 1;
+}
+
+message DownloadFromMinioResponse {
+  repeated string fileIds = 1;
+}

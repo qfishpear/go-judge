@@ -12,6 +12,7 @@ import "response.proto";
 import "stream_request.proto";
 import "stream_response.proto";
 import "file.proto";
+import "minio.proto";
 import "google/protobuf/go_features.proto";
 
 service Executor {
@@ -36,4 +37,12 @@ service Executor {
 
   // FileDelete deletes a file from the file store
   rpc FileDelete(FileID) returns (google.protobuf.Empty);
+
+  // FileDownloadFromMinio download the file from minio and store it in file store. The download works in batch mode.
+  // The presigned GET URLs are provided by the caller.
+  rpc FileDownloadFromMinio(DownloadFromMinioRequest) returns (DownloadFromMinioResponse);
+
+  // FileUploadToMinio upload the file from file store to minio
+  // The presigned PUT URL is provided by the caller.
+  rpc FileUploadToMinio(UploadToMinioRequest) returns (google.protobuf.Empty);
 };
