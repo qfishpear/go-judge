@@ -48,6 +48,10 @@ type Config struct {
 	EnableDebug   bool          `flagUsage:"enable debug endpoint"`
 	EnableMetrics bool          `flagUsage:"enable prometheus metrics endpoint"`
 
+	GRPCMtlsCA   string `flagUsage:"path to CA certificate file for gRPC mTLS"`
+	GRPCMtlsKey  string `flagUsage:"path to private key file for gRPC mTLS"`
+	GRPCMtlsCert string `flagUsage:"path to public key (certificate) file for gRPC mTLS"`
+
 	// logger config
 	Release bool `flagUsage:"release level of logs"`
 	Silent  bool `flagUsage:"do not print logs"`

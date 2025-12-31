@@ -4,6 +4,8 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"flag"
 	"fmt"
@@ -45,6 +47,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/status"
 )
@@ -407,6 +410,41 @@ func InterceptorLogger(l *zap.Logger) grpc_logging.Logger {
 	})
 }
 
+func loadGRPCmTLSCredentials(conf *config.Config) (credentials.TransportCredentials, error) {
+	hasCA := conf.GRPCMtlsCA != ""
+	hasPrivateKey := conf.GRPCMtlsKey != ""
+	hasPublicKey := conf.GRPCMtlsCert != ""
+
+	if !hasCA && !hasPrivateKey && !hasPublicKey {
+		return nil, nil
+	}
+	if !hasCA || !hasPrivateKey || !hasPublicKey {
+		return nil, fmt.Errorf("if mTLS is enabled, all three certificate files must be provided")
+	}
+
+	caCert, err := os.ReadFile(conf.GRPCMtlsCA)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CA certificate file %q: %w", conf.GRPCMtlsCA, err)
+	}
+	cert, err := tls.LoadX509KeyPair(conf.GRPCMtlsCert, conf.GRPCMtlsKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load server certificate/key pair: %w", err)
+	}
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("failed to parse CA certificate")
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientCAs:    caCertPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		MinVersion:   tls.VersionTLS12,
+	}
+
+	return credentials.NewTLS(tlsConfig), nil
+}
+
 func newGRPCServer(conf *config.Config, esServer pb.ExecutorServer) *grpc.Server {
 	prom := grpc_prometheus.NewServerMetrics(grpc_prometheus.WithServerHandlingTimeHistogram())
 	grpclog.SetLoggerV2(zapgrpc.NewLogger(logger))
@@ -425,11 +463,27 @@ func newGRPCServer(conf *config.Config, esServer pb.ExecutorServer) *grpc.Server
 		streamMiddleware = append(streamMiddleware, grpc_auth.StreamServerInterceptor(authFunc))
 		unaryMiddleware = append(unaryMiddleware, grpc_auth.UnaryServerInterceptor(authFunc))
 	}
-	grpcServer := grpc.NewServer(
+
+	opts := []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(streamMiddleware...),
 		grpc.ChainUnaryInterceptor(unaryMiddleware...),
 		grpc.MaxRecvMsgSize(int(conf.GRPCMsgSize.Byte())),
-	)
+	}
+
+	// Load mTLS credentials if configured
+	creds, err := loadGRPCmTLSCredentials(conf)
+	if err != nil {
+		logger.Fatal("Failed to load gRPC mTLS credentials", zap.Error(err))
+	}
+	if creds != nil {
+		logger.Info("gRPC mTLS enabled",
+			zap.String("ca", conf.GRPCMtlsCA),
+			zap.String("cert", conf.GRPCMtlsCert),
+			zap.String("key", conf.GRPCMtlsKey))
+		opts = append(opts, grpc.Creds(creds))
+	}
+
+	grpcServer := grpc.NewServer(opts...)
 	pb.RegisterExecutorServer(grpcServer, esServer)
 	prometheus.MustRegister(prom)
 	return grpcServer
