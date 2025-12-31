@@ -39,6 +39,7 @@ type Config struct {
 	FileTimeout              time.Duration `flagUsage:"specified timeout for filestore files"`
 
 	// server config
+	EnableHTTP    bool          `flagUsage:"enable HTTP endpoint" default:"true"`
 	HTTPAddr      string        `flagUsage:"specifies the http binding address"`
 	EnableGRPC    bool          `flagUsage:"enable gRPC endpoint"`
 	GRPCAddr      string        `flagUsage:"specifies the grpc binding address"`
