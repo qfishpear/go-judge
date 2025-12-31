@@ -195,6 +195,9 @@ func cleanUpFs(fsCleanUp func() error) initFunc {
 
 func initHTTPServer(conf *config.Config, work worker.Worker, fs filestore.FileStore, builderParam map[string]any) initFunc {
 	return func() (start func(), cleanUp stopFunc) {
+		if !conf.EnableHTTP {
+			return nil, nil
+		}
 		// Init http handle
 		r := initHTTPMux(conf, work, fs, builderParam)
 		srv := http.Server{
