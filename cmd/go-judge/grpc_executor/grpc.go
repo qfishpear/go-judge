@@ -70,10 +70,10 @@ func (e *execServer) FileList(c context.Context, n *emptypb.Empty) (*pb.FileList
 	}.Build(), nil
 }
 
-func (e *execServer) FileGet(c context.Context, f *pb.FileID) (*pb.FileContent, error) {
-	name, file := e.fs.Get(f.GetFileID())
+func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.FileContent, error) {
+	name, file := e.fs.Get(req.GetFileID())
 	if file == nil {
-		return nil, status.Errorf(codes.NotFound, "file not found: %q", f.GetFileID())
+		return nil, status.Errorf(codes.NotFound, "file not found: %q", req.GetFileID())
 	}
 	r, err := envexec.FileToReader(file)
 	if err != nil {
@@ -81,9 +81,21 @@ func (e *execServer) FileGet(c context.Context, f *pb.FileID) (*pb.FileContent, 
 	}
 	defer r.Close()
 
-	content, err := io.ReadAll(r)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	var content []byte
+	truncateLength := req.GetTruncateLength()
+	if truncateLength > 0 {
+		// If truncateLength is provided, limit reading to that many bytes
+		limitedReader := io.LimitReader(r, int64(truncateLength))
+		content, err = io.ReadAll(limitedReader)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	} else {
+		// If truncateLength is not provided, read all content
+		content, err = io.ReadAll(r)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
 	return pb.FileContent_builder{
 		Name:    name,
