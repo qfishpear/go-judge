@@ -9,6 +9,11 @@ option features.(pb.go).api_level = API_OPAQUE;
 
 message FileID { string fileID = 1; }
 
+message FileGetRequest {
+  string fileID = 1;
+  uint64 truncateLength = 2;
+}
+
 message FileContent {
   string name = 1;
   bytes content = 2;

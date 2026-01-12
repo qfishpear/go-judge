@@ -47,7 +47,7 @@ type ExecutorClient interface {
 	// FileList lists all files available in the file store
 	FileList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileListType, error)
 	// FileGet download the file from the file store
-	FileGet(ctx context.Context, in *FileID, opts ...grpc.CallOption) (*FileContent, error)
+	FileGet(ctx context.Context, in *FileGetRequest, opts ...grpc.CallOption) (*FileContent, error)
 	// FileGetStream streams a file from the file store.
 	// The first response carries the file name; following responses may omit it.
 	FileGetStream(ctx context.Context, in *FileID, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FileContent], error)
@@ -107,7 +107,7 @@ func (c *executorClient) FileList(ctx context.Context, in *emptypb.Empty, opts .
 	return out, nil
 }
 
-func (c *executorClient) FileGet(ctx context.Context, in *FileID, opts ...grpc.CallOption) (*FileContent, error) {
+func (c *executorClient) FileGet(ctx context.Context, in *FileGetRequest, opts ...grpc.CallOption) (*FileContent, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FileContent)
 	err := c.cc.Invoke(ctx, Executor_FileGet_FullMethodName, in, out, cOpts...)
@@ -204,7 +204,7 @@ type ExecutorServer interface {
 	// FileList lists all files available in the file store
 	FileList(context.Context, *emptypb.Empty) (*FileListType, error)
 	// FileGet download the file from the file store
-	FileGet(context.Context, *FileID) (*FileContent, error)
+	FileGet(context.Context, *FileGetRequest) (*FileContent, error)
 	// FileGetStream streams a file from the file store.
 	// The first response carries the file name; following responses may omit it.
 	FileGetStream(*FileID, grpc.ServerStreamingServer[FileContent]) error
@@ -240,7 +240,7 @@ func (UnimplementedExecutorServer) ExecStream(grpc.BidiStreamingServer[StreamReq
 func (UnimplementedExecutorServer) FileList(context.Context, *emptypb.Empty) (*FileListType, error) {
 	return nil, status.Error(codes.Unimplemented, "method FileList not implemented")
 }
-func (UnimplementedExecutorServer) FileGet(context.Context, *FileID) (*FileContent, error) {
+func (UnimplementedExecutorServer) FileGet(context.Context, *FileGetRequest) (*FileContent, error) {
 	return nil, status.Error(codes.Unimplemented, "method FileGet not implemented")
 }
 func (UnimplementedExecutorServer) FileGetStream(*FileID, grpc.ServerStreamingServer[FileContent]) error {
@@ -326,7 +326,7 @@ func _Executor_FileList_Handler(srv interface{}, ctx context.Context, dec func(i
 }
 
 func _Executor_FileGet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FileID)
+	in := new(FileGetRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func _Executor_FileGet_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: Executor_FileGet_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecutorServer).FileGet(ctx, req.(*FileID))
+		return srv.(ExecutorServer).FileGet(ctx, req.(*FileGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
