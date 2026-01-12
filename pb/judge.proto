@@ -30,7 +30,7 @@ service Executor {
   rpc FileList(google.protobuf.Empty) returns (FileListType);
 
   // FileGet download the file from the file store
-  rpc FileGet(FileID) returns (FileContent);
+  rpc FileGet(FileGetRequest) returns (FileContent);
 
   // FileAdd create a file into the file store
   rpc FileAdd(FileContent) returns (FileID);

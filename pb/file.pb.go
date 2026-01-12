@@ -78,6 +78,77 @@ func (b0 FileID_builder) Build() *FileID {
 	return m0
 }
 
+type FileGetRequest struct {
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FileID         string                 `protobuf:"bytes,1,opt,name=fileID"`
+	xxx_hidden_TruncateLength uint64                 `protobuf:"varint,2,opt,name=truncateLength"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *FileGetRequest) Reset() {
+	*x = FileGetRequest{}
+	mi := &file_file_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileGetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileGetRequest) ProtoMessage() {}
+
+func (x *FileGetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FileGetRequest) GetFileID() string {
+	if x != nil {
+		return x.xxx_hidden_FileID
+	}
+	return ""
+}
+
+func (x *FileGetRequest) GetTruncateLength() uint64 {
+	if x != nil {
+		return x.xxx_hidden_TruncateLength
+	}
+	return 0
+}
+
+func (x *FileGetRequest) SetFileID(v string) {
+	x.xxx_hidden_FileID = v
+}
+
+func (x *FileGetRequest) SetTruncateLength(v uint64) {
+	x.xxx_hidden_TruncateLength = v
+}
+
+type FileGetRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	FileID         string
+	TruncateLength uint64
+}
+
+func (b0 FileGetRequest_builder) Build() *FileGetRequest {
+	m0 := &FileGetRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_FileID = b.FileID
+	x.xxx_hidden_TruncateLength = b.TruncateLength
+	return m0
+}
+
 type FileContent struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name"`
@@ -88,7 +159,7 @@ type FileContent struct {
 
 func (x *FileContent) Reset() {
 	*x = FileContent{}
-	mi := &file_file_proto_msgTypes[1]
+	mi := &file_file_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -100,7 +171,7 @@ func (x *FileContent) String() string {
 func (*FileContent) ProtoMessage() {}
 
 func (x *FileContent) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[1]
+	mi := &file_file_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -161,7 +232,7 @@ type FileListType struct {
 
 func (x *FileListType) Reset() {
 	*x = FileListType{}
-	mi := &file_file_proto_msgTypes[2]
+	mi := &file_file_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -173,7 +244,7 @@ func (x *FileListType) String() string {
 func (*FileListType) ProtoMessage() {}
 
 func (x *FileListType) ProtoReflect() protoreflect.Message {
-	mi := &file_file_proto_msgTypes[2]
+	mi := &file_file_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -216,7 +287,10 @@ const file_file_proto_rawDesc = "" +
 	"\n" +
 	"file.proto\x12\x02pb\x1a!google/protobuf/go_features.proto\" \n" +
 	"\x06FileID\x12\x16\n" +
-	"\x06fileID\x18\x01 \x01(\tR\x06fileID\";\n" +
+	"\x06fileID\x18\x01 \x01(\tR\x06fileID\"P\n" +
+	"\x0eFileGetRequest\x12\x16\n" +
+	"\x06fileID\x18\x01 \x01(\tR\x06fileID\x12&\n" +
+	"\x0etruncateLength\x18\x02 \x01(\x04R\x0etruncateLength\";\n" +
 	"\vFileContent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\"\x83\x01\n" +
@@ -226,15 +300,16 @@ const file_file_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_file_proto_goTypes = []any{
-	(*FileID)(nil),       // 0: pb.FileID
-	(*FileContent)(nil),  // 1: pb.FileContent
-	(*FileListType)(nil), // 2: pb.FileListType
-	nil,                  // 3: pb.FileListType.FileIDsEntry
+	(*FileID)(nil),         // 0: pb.FileID
+	(*FileGetRequest)(nil), // 1: pb.FileGetRequest
+	(*FileContent)(nil),    // 2: pb.FileContent
+	(*FileListType)(nil),   // 3: pb.FileListType
+	nil,                    // 4: pb.FileListType.FileIDsEntry
 }
 var file_file_proto_depIdxs = []int32{
-	3, // 0: pb.FileListType.fileIDs:type_name -> pb.FileListType.FileIDsEntry
+	4, // 0: pb.FileListType.fileIDs:type_name -> pb.FileListType.FileIDsEntry
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -253,7 +328,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
