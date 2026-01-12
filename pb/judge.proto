@@ -30,7 +30,7 @@ service Executor {
   rpc FileList(google.protobuf.Empty) returns (FileListType);
 
   // FileGet download the file from the file store
-  rpc FileGet(FileID) returns (FileContent);
+  rpc FileGet(FileGetRequest) returns (FileContent);
 
   // FileGetStream streams a file from the file store.
   // The first response carries the file name; following responses may omit it.
