@@ -80,7 +80,7 @@ func (b0 FileID_builder) Build() *FileID {
 
 type FileGetRequest struct {
 	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileID         string                 `protobuf:"bytes,1,opt,name=fileID"`
+	xxx_hidden_FileIDs        []string               `protobuf:"bytes,1,rep,name=fileIDs"`
 	xxx_hidden_TruncateLength uint64                 `protobuf:"varint,2,opt,name=truncateLength"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
@@ -111,11 +111,11 @@ func (x *FileGetRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *FileGetRequest) GetFileID() string {
+func (x *FileGetRequest) GetFileIDs() []string {
 	if x != nil {
-		return x.xxx_hidden_FileID
+		return x.xxx_hidden_FileIDs
 	}
-	return ""
+	return nil
 }
 
 func (x *FileGetRequest) GetTruncateLength() uint64 {
@@ -125,8 +125,8 @@ func (x *FileGetRequest) GetTruncateLength() uint64 {
 	return 0
 }
 
-func (x *FileGetRequest) SetFileID(v string) {
-	x.xxx_hidden_FileID = v
+func (x *FileGetRequest) SetFileIDs(v []string) {
+	x.xxx_hidden_FileIDs = v
 }
 
 func (x *FileGetRequest) SetTruncateLength(v uint64) {
@@ -136,7 +136,7 @@ func (x *FileGetRequest) SetTruncateLength(v uint64) {
 type FileGetRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	FileID         string
+	FileIDs        []string
 	TruncateLength uint64
 }
 
@@ -144,12 +144,12 @@ func (b0 FileGetRequest_builder) Build() *FileGetRequest {
 	m0 := &FileGetRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_FileID = b.FileID
+	x.xxx_hidden_FileIDs = b.FileIDs
 	x.xxx_hidden_TruncateLength = b.TruncateLength
 	return m0
 }
 
-type FileContent struct {
+type FileAddRequest struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name"`
 	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content"`
@@ -157,20 +157,20 @@ type FileContent struct {
 	sizeCache          protoimpl.SizeCache
 }
 
-func (x *FileContent) Reset() {
-	*x = FileContent{}
+func (x *FileAddRequest) Reset() {
+	*x = FileAddRequest{}
 	mi := &file_file_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FileContent) String() string {
+func (x *FileAddRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FileContent) ProtoMessage() {}
+func (*FileAddRequest) ProtoMessage() {}
 
-func (x *FileContent) ProtoReflect() protoreflect.Message {
+func (x *FileAddRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_file_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -182,40 +182,40 @@ func (x *FileContent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *FileContent) GetName() string {
+func (x *FileAddRequest) GetName() string {
 	if x != nil {
 		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
-func (x *FileContent) GetContent() []byte {
+func (x *FileAddRequest) GetContent() []byte {
 	if x != nil {
 		return x.xxx_hidden_Content
 	}
 	return nil
 }
 
-func (x *FileContent) SetName(v string) {
+func (x *FileAddRequest) SetName(v string) {
 	x.xxx_hidden_Name = v
 }
 
-func (x *FileContent) SetContent(v []byte) {
+func (x *FileAddRequest) SetContent(v []byte) {
 	if v == nil {
 		v = []byte{}
 	}
 	x.xxx_hidden_Content = v
 }
 
-type FileContent_builder struct {
+type FileAddRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Name    string
 	Content []byte
 }
 
-func (b0 FileContent_builder) Build() *FileContent {
-	m0 := &FileContent{}
+func (b0 FileAddRequest_builder) Build() *FileAddRequest {
+	m0 := &FileAddRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Name = b.Name
@@ -223,27 +223,27 @@ func (b0 FileContent_builder) Build() *FileContent {
 	return m0
 }
 
-type FileListType struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileIDs map[string]string      `protobuf:"bytes,1,rep,name=fileIDs" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+type FileGetResponse struct {
+	state               protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Contents *[]*FileGetResponse_FileContent `protobuf:"bytes,1,rep,name=contents"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
-func (x *FileListType) Reset() {
-	*x = FileListType{}
+func (x *FileGetResponse) Reset() {
+	*x = FileGetResponse{}
 	mi := &file_file_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FileListType) String() string {
+func (x *FileGetResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FileListType) ProtoMessage() {}
+func (*FileGetResponse) ProtoMessage() {}
 
-func (x *FileListType) ProtoReflect() protoreflect.Message {
+func (x *FileGetResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_file_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -255,28 +255,218 @@ func (x *FileListType) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *FileListType) GetFileIDs() map[string]string {
+func (x *FileGetResponse) GetContents() []*FileGetResponse_FileContent {
+	if x != nil {
+		if x.xxx_hidden_Contents != nil {
+			return *x.xxx_hidden_Contents
+		}
+	}
+	return nil
+}
+
+func (x *FileGetResponse) SetContents(v []*FileGetResponse_FileContent) {
+	x.xxx_hidden_Contents = &v
+}
+
+type FileGetResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Contents []*FileGetResponse_FileContent
+}
+
+func (b0 FileGetResponse_builder) Build() *FileGetResponse {
+	m0 := &FileGetResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Contents = &b.Contents
+	return m0
+}
+
+type FileListResponse struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FileIDs map[string]string      `protobuf:"bytes,1,rep,name=fileIDs" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *FileListResponse) Reset() {
+	*x = FileListResponse{}
+	mi := &file_file_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileListResponse) ProtoMessage() {}
+
+func (x *FileListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FileListResponse) GetFileIDs() map[string]string {
 	if x != nil {
 		return x.xxx_hidden_FileIDs
 	}
 	return nil
 }
 
-func (x *FileListType) SetFileIDs(v map[string]string) {
+func (x *FileListResponse) SetFileIDs(v map[string]string) {
 	x.xxx_hidden_FileIDs = v
 }
 
-type FileListType_builder struct {
+type FileListResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	FileIDs map[string]string
 }
 
-func (b0 FileListType_builder) Build() *FileListType {
-	m0 := &FileListType{}
+func (b0 FileListResponse_builder) Build() *FileListResponse {
+	m0 := &FileListResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_FileIDs = b.FileIDs
+	return m0
+}
+
+type FileDeleteRequest struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FileIDs []string               `protobuf:"bytes,1,rep,name=fileIDs"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *FileDeleteRequest) Reset() {
+	*x = FileDeleteRequest{}
+	mi := &file_file_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileDeleteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileDeleteRequest) ProtoMessage() {}
+
+func (x *FileDeleteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FileDeleteRequest) GetFileIDs() []string {
+	if x != nil {
+		return x.xxx_hidden_FileIDs
+	}
+	return nil
+}
+
+func (x *FileDeleteRequest) SetFileIDs(v []string) {
+	x.xxx_hidden_FileIDs = v
+}
+
+type FileDeleteRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	FileIDs []string
+}
+
+func (b0 FileDeleteRequest_builder) Build() *FileDeleteRequest {
+	m0 := &FileDeleteRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_FileIDs = b.FileIDs
+	return m0
+}
+
+type FileGetResponse_FileContent struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FileId  string                 `protobuf:"bytes,1,opt,name=fileId"`
+	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *FileGetResponse_FileContent) Reset() {
+	*x = FileGetResponse_FileContent{}
+	mi := &file_file_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileGetResponse_FileContent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileGetResponse_FileContent) ProtoMessage() {}
+
+func (x *FileGetResponse_FileContent) ProtoReflect() protoreflect.Message {
+	mi := &file_file_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *FileGetResponse_FileContent) GetFileId() string {
+	if x != nil {
+		return x.xxx_hidden_FileId
+	}
+	return ""
+}
+
+func (x *FileGetResponse_FileContent) GetContent() []byte {
+	if x != nil {
+		return x.xxx_hidden_Content
+	}
+	return nil
+}
+
+func (x *FileGetResponse_FileContent) SetFileId(v string) {
+	x.xxx_hidden_FileId = v
+}
+
+func (x *FileGetResponse_FileContent) SetContent(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_Content = v
+}
+
+type FileGetResponse_FileContent_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	FileId  string
+	Content []byte
+}
+
+func (b0 FileGetResponse_FileContent_builder) Build() *FileGetResponse_FileContent {
+	m0 := &FileGetResponse_FileContent{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_FileId = b.FileId
+	x.xxx_hidden_Content = b.Content
 	return m0
 }
 
@@ -287,34 +477,45 @@ const file_file_proto_rawDesc = "" +
 	"\n" +
 	"file.proto\x12\x02pb\x1a!google/protobuf/go_features.proto\" \n" +
 	"\x06FileID\x12\x16\n" +
-	"\x06fileID\x18\x01 \x01(\tR\x06fileID\"P\n" +
-	"\x0eFileGetRequest\x12\x16\n" +
-	"\x06fileID\x18\x01 \x01(\tR\x06fileID\x12&\n" +
-	"\x0etruncateLength\x18\x02 \x01(\x04R\x0etruncateLength\";\n" +
-	"\vFileContent\x12\x12\n" +
+	"\x06fileID\x18\x01 \x01(\tR\x06fileID\"R\n" +
+	"\x0eFileGetRequest\x12\x18\n" +
+	"\afileIDs\x18\x01 \x03(\tR\afileIDs\x12&\n" +
+	"\x0etruncateLength\x18\x02 \x01(\x04R\x0etruncateLength\">\n" +
+	"\x0eFileAddRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"\x83\x01\n" +
-	"\fFileListType\x127\n" +
-	"\afileIDs\x18\x01 \x03(\v2\x1d.pb.FileListType.FileIDsEntryR\afileIDs\x1a:\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\"\x8f\x01\n" +
+	"\x0fFileGetResponse\x12;\n" +
+	"\bcontents\x18\x01 \x03(\v2\x1f.pb.FileGetResponse.FileContentR\bcontents\x1a?\n" +
+	"\vFileContent\x12\x16\n" +
+	"\x06fileId\x18\x01 \x01(\tR\x06fileId\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\"\x8b\x01\n" +
+	"\x10FileListResponse\x12;\n" +
+	"\afileIDs\x18\x01 \x03(\v2!.pb.FileListResponse.FileIDsEntryR\afileIDs\x1a:\n" +
 	"\fFileIDsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"-\n" +
+	"\x11FileDeleteRequest\x12\x18\n" +
+	"\afileIDs\x18\x01 \x03(\tR\afileIDsB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
 
-var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_file_proto_goTypes = []any{
-	(*FileID)(nil),         // 0: pb.FileID
-	(*FileGetRequest)(nil), // 1: pb.FileGetRequest
-	(*FileContent)(nil),    // 2: pb.FileContent
-	(*FileListType)(nil),   // 3: pb.FileListType
-	nil,                    // 4: pb.FileListType.FileIDsEntry
+	(*FileID)(nil),                      // 0: pb.FileID
+	(*FileGetRequest)(nil),              // 1: pb.FileGetRequest
+	(*FileAddRequest)(nil),              // 2: pb.FileAddRequest
+	(*FileGetResponse)(nil),             // 3: pb.FileGetResponse
+	(*FileListResponse)(nil),            // 4: pb.FileListResponse
+	(*FileDeleteRequest)(nil),           // 5: pb.FileDeleteRequest
+	(*FileGetResponse_FileContent)(nil), // 6: pb.FileGetResponse.FileContent
+	nil,                                 // 7: pb.FileListResponse.FileIDsEntry
 }
 var file_file_proto_depIdxs = []int32{
-	4, // 0: pb.FileListType.fileIDs:type_name -> pb.FileListType.FileIDsEntry
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	6, // 0: pb.FileGetResponse.contents:type_name -> pb.FileGetResponse.FileContent
+	7, // 1: pb.FileListResponse.fileIDs:type_name -> pb.FileListResponse.FileIDsEntry
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_file_proto_init() }
@@ -328,7 +529,7 @@ func file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_file_proto_rawDesc), len(file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
