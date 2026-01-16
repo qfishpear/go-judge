@@ -23,10 +23,10 @@ const (
 	Executor_Exec_FullMethodName                  = "/pb.Executor/Exec"
 	Executor_ExecStream_FullMethodName            = "/pb.Executor/ExecStream"
 	Executor_FileList_FullMethodName              = "/pb.Executor/FileList"
-	Executor_FileGet_FullMethodName               = "/pb.Executor/FileGet"
 	Executor_FileGetStream_FullMethodName         = "/pb.Executor/FileGetStream"
 	Executor_FileAdd_FullMethodName               = "/pb.Executor/FileAdd"
 	Executor_FileAddStream_FullMethodName         = "/pb.Executor/FileAddStream"
+	Executor_FileGet_FullMethodName               = "/pb.Executor/FileGet"
 	Executor_FileDelete_FullMethodName            = "/pb.Executor/FileDelete"
 	Executor_FileDownloadFromMinio_FullMethodName = "/pb.Executor/FileDownloadFromMinio"
 	Executor_FileUploadToMinio_FullMethodName     = "/pb.Executor/FileUploadToMinio"
@@ -45,19 +45,19 @@ type ExecutorClient interface {
 	// stdout & stderr should have same name
 	ExecStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StreamRequest, StreamResponse], error)
 	// FileList lists all files available in the file store
-	FileList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileListType, error)
-	// FileGet download the file from the file store
-	FileGet(ctx context.Context, in *FileGetRequest, opts ...grpc.CallOption) (*FileContent, error)
+	FileList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileListResponse, error)
 	// FileGetStream streams a file from the file store.
 	// The first response carries the file name; following responses may omit it.
 	FileGetStream(ctx context.Context, in *FileID, opts ...grpc.CallOption) (grpc.ServerStreamingClient[FileContent], error)
 	// FileAdd create a file into the file store
-	FileAdd(ctx context.Context, in *FileContent, opts ...grpc.CallOption) (*FileID, error)
+	FileAdd(ctx context.Context, in *FileAddRequest, opts ...grpc.CallOption) (*FileID, error)
 	// FileAddStream streams a file into the file store and returns its file ID.
 	// The first message carries the file name; following messages may omit it.
 	FileAddStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[FileContent, FileID], error)
-	// FileDelete deletes a file from the file store
-	FileDelete(ctx context.Context, in *FileID, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// FileGet download files from the file store (supports batch retrieval)
+	FileGet(ctx context.Context, in *FileGetRequest, opts ...grpc.CallOption) (*FileGetResponse, error)
+	// FileDelete deletes files from the file store (supports batch deletion)
+	FileDelete(ctx context.Context, in *FileDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// FileDownloadFromMinio download the file from minio and store it in file store. The download works in batch mode.
 	// The presigned GET URLs are provided by the caller.
 	FileDownloadFromMinio(ctx context.Context, in *DownloadFromMinioRequest, opts ...grpc.CallOption) (*DownloadFromMinioResponse, error)
@@ -97,20 +97,10 @@ func (c *executorClient) ExecStream(ctx context.Context, opts ...grpc.CallOption
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Executor_ExecStreamClient = grpc.BidiStreamingClient[StreamRequest, StreamResponse]
 
-func (c *executorClient) FileList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileListType, error) {
+func (c *executorClient) FileList(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FileListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FileListType)
+	out := new(FileListResponse)
 	err := c.cc.Invoke(ctx, Executor_FileList_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *executorClient) FileGet(ctx context.Context, in *FileGetRequest, opts ...grpc.CallOption) (*FileContent, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FileContent)
-	err := c.cc.Invoke(ctx, Executor_FileGet_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +126,7 @@ func (c *executorClient) FileGetStream(ctx context.Context, in *FileID, opts ...
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Executor_FileGetStreamClient = grpc.ServerStreamingClient[FileContent]
 
-func (c *executorClient) FileAdd(ctx context.Context, in *FileContent, opts ...grpc.CallOption) (*FileID, error) {
+func (c *executorClient) FileAdd(ctx context.Context, in *FileAddRequest, opts ...grpc.CallOption) (*FileID, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FileID)
 	err := c.cc.Invoke(ctx, Executor_FileAdd_FullMethodName, in, out, cOpts...)
@@ -159,7 +149,17 @@ func (c *executorClient) FileAddStream(ctx context.Context, opts ...grpc.CallOpt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Executor_FileAddStreamClient = grpc.ClientStreamingClient[FileContent, FileID]
 
-func (c *executorClient) FileDelete(ctx context.Context, in *FileID, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *executorClient) FileGet(ctx context.Context, in *FileGetRequest, opts ...grpc.CallOption) (*FileGetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FileGetResponse)
+	err := c.cc.Invoke(ctx, Executor_FileGet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *executorClient) FileDelete(ctx context.Context, in *FileDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Executor_FileDelete_FullMethodName, in, out, cOpts...)
@@ -202,19 +202,19 @@ type ExecutorServer interface {
 	// stdout & stderr should have same name
 	ExecStream(grpc.BidiStreamingServer[StreamRequest, StreamResponse]) error
 	// FileList lists all files available in the file store
-	FileList(context.Context, *emptypb.Empty) (*FileListType, error)
-	// FileGet download the file from the file store
-	FileGet(context.Context, *FileGetRequest) (*FileContent, error)
+	FileList(context.Context, *emptypb.Empty) (*FileListResponse, error)
 	// FileGetStream streams a file from the file store.
 	// The first response carries the file name; following responses may omit it.
 	FileGetStream(*FileID, grpc.ServerStreamingServer[FileContent]) error
 	// FileAdd create a file into the file store
-	FileAdd(context.Context, *FileContent) (*FileID, error)
+	FileAdd(context.Context, *FileAddRequest) (*FileID, error)
 	// FileAddStream streams a file into the file store and returns its file ID.
 	// The first message carries the file name; following messages may omit it.
 	FileAddStream(grpc.ClientStreamingServer[FileContent, FileID]) error
-	// FileDelete deletes a file from the file store
-	FileDelete(context.Context, *FileID) (*emptypb.Empty, error)
+	// FileGet download files from the file store (supports batch retrieval)
+	FileGet(context.Context, *FileGetRequest) (*FileGetResponse, error)
+	// FileDelete deletes files from the file store (supports batch deletion)
+	FileDelete(context.Context, *FileDeleteRequest) (*emptypb.Empty, error)
 	// FileDownloadFromMinio download the file from minio and store it in file store. The download works in batch mode.
 	// The presigned GET URLs are provided by the caller.
 	FileDownloadFromMinio(context.Context, *DownloadFromMinioRequest) (*DownloadFromMinioResponse, error)
@@ -237,22 +237,22 @@ func (UnimplementedExecutorServer) Exec(context.Context, *Request) (*Response, e
 func (UnimplementedExecutorServer) ExecStream(grpc.BidiStreamingServer[StreamRequest, StreamResponse]) error {
 	return status.Error(codes.Unimplemented, "method ExecStream not implemented")
 }
-func (UnimplementedExecutorServer) FileList(context.Context, *emptypb.Empty) (*FileListType, error) {
+func (UnimplementedExecutorServer) FileList(context.Context, *emptypb.Empty) (*FileListResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FileList not implemented")
-}
-func (UnimplementedExecutorServer) FileGet(context.Context, *FileGetRequest) (*FileContent, error) {
-	return nil, status.Error(codes.Unimplemented, "method FileGet not implemented")
 }
 func (UnimplementedExecutorServer) FileGetStream(*FileID, grpc.ServerStreamingServer[FileContent]) error {
 	return status.Error(codes.Unimplemented, "method FileGetStream not implemented")
 }
-func (UnimplementedExecutorServer) FileAdd(context.Context, *FileContent) (*FileID, error) {
+func (UnimplementedExecutorServer) FileAdd(context.Context, *FileAddRequest) (*FileID, error) {
 	return nil, status.Error(codes.Unimplemented, "method FileAdd not implemented")
 }
 func (UnimplementedExecutorServer) FileAddStream(grpc.ClientStreamingServer[FileContent, FileID]) error {
 	return status.Error(codes.Unimplemented, "method FileAddStream not implemented")
 }
-func (UnimplementedExecutorServer) FileDelete(context.Context, *FileID) (*emptypb.Empty, error) {
+func (UnimplementedExecutorServer) FileGet(context.Context, *FileGetRequest) (*FileGetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method FileGet not implemented")
+}
+func (UnimplementedExecutorServer) FileDelete(context.Context, *FileDeleteRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method FileDelete not implemented")
 }
 func (UnimplementedExecutorServer) FileDownloadFromMinio(context.Context, *DownloadFromMinioRequest) (*DownloadFromMinioResponse, error) {
@@ -325,6 +325,42 @@ func _Executor_FileList_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Executor_FileGetStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FileID)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ExecutorServer).FileGetStream(m, &grpc.GenericServerStream[FileID, FileContent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Executor_FileGetStreamServer = grpc.ServerStreamingServer[FileContent]
+
+func _Executor_FileAdd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FileAddRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ExecutorServer).FileAdd(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Executor_FileAdd_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ExecutorServer).FileAdd(ctx, req.(*FileAddRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Executor_FileAddStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ExecutorServer).FileAddStream(&grpc.GenericServerStream[FileContent, FileID]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Executor_FileAddStreamServer = grpc.ClientStreamingServer[FileContent, FileID]
+
 func _Executor_FileGet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FileGetRequest)
 	if err := dec(in); err != nil {
@@ -343,44 +379,8 @@ func _Executor_FileGet_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Executor_FileGetStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(FileID)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ExecutorServer).FileGetStream(m, &grpc.GenericServerStream[FileID, FileContent]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Executor_FileGetStreamServer = grpc.ServerStreamingServer[FileContent]
-
-func _Executor_FileAdd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FileContent)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ExecutorServer).FileAdd(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Executor_FileAdd_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecutorServer).FileAdd(ctx, req.(*FileContent))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Executor_FileAddStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ExecutorServer).FileAddStream(&grpc.GenericServerStream[FileContent, FileID]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Executor_FileAddStreamServer = grpc.ClientStreamingServer[FileContent, FileID]
-
 func _Executor_FileDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FileID)
+	in := new(FileDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -392,7 +392,7 @@ func _Executor_FileDelete_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: Executor_FileDelete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExecutorServer).FileDelete(ctx, req.(*FileID))
+		return srv.(ExecutorServer).FileDelete(ctx, req.(*FileDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -449,12 +449,12 @@ var Executor_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Executor_FileList_Handler,
 		},
 		{
-			MethodName: "FileGet",
-			Handler:    _Executor_FileGet_Handler,
-		},
-		{
 			MethodName: "FileAdd",
 			Handler:    _Executor_FileAdd_Handler,
+		},
+		{
+			MethodName: "FileGet",
+			Handler:    _Executor_FileGet_Handler,
 		},
 		{
 			MethodName: "FileDelete",
