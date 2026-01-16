@@ -64,56 +64,71 @@ func (e *execServer) Exec(ctx context.Context, req *pb.Request) (*pb.Response, e
 	return resp, nil
 }
 
-func (e *execServer) FileList(c context.Context, n *emptypb.Empty) (*pb.FileListType, error) {
-	return pb.FileListType_builder{
+func (e *execServer) FileList(c context.Context, n *emptypb.Empty) (*pb.FileListResponse, error) {
+	return pb.FileListResponse_builder{
 		FileIDs: e.fs.List(),
 	}.Build(), nil
 }
 
-func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.FileContent, error) {
-	name, file := e.fs.Get(req.GetFileID())
-	if file == nil {
-		return nil, status.Errorf(codes.NotFound, "file not found: %q", req.GetFileID())
+func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.FileGetResponse, error) {
+	fileIDs := req.GetFileIDs()
+	if len(fileIDs) == 0 {
+		return pb.FileGetResponse_builder{
+			Contents: []*pb.FileGetResponse_FileContent{},
+		}.Build(), nil
 	}
-	r, err := envexec.FileToReader(file)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	defer r.Close()
 
-	var content []byte
+	contents := make([]*pb.FileGetResponse_FileContent, 0, len(fileIDs))
 	truncateLength := req.GetTruncateLength()
-	if truncateLength > 0 {
-		// If truncateLength is provided, limit reading to that many bytes
-		limitedReader := io.LimitReader(r, int64(truncateLength))
-		content, err = io.ReadAll(limitedReader)
+
+	for _, fileID := range fileIDs {
+		_, file := e.fs.Get(fileID)
+		r, err := envexec.FileToReader(file)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, status.Errorf(codes.NotFound, "file not found: %q", fileID)
 		}
-	} else {
-		// If truncateLength is not provided, read all content
-		content, err = io.ReadAll(r)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+
+		var content []byte
+		if truncateLength > 0 {
+			// If truncateLength is provided, limit reading to that many bytes
+			limitedReader := io.LimitReader(r, int64(truncateLength))
+			content, err = io.ReadAll(limitedReader)
+			if err != nil {
+				r.Close()
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		} else {
+			// If truncateLength is not provided, read all content
+			content, err = io.ReadAll(r)
+			if err != nil {
+				r.Close()
+				return nil, status.Error(codes.Internal, err.Error())
+			}
 		}
+		r.Close()
+
+		contents = append(contents, pb.FileGetResponse_FileContent_builder{
+			FileId:  fileID,
+			Content: content,
+		}.Build())
 	}
-	return pb.FileContent_builder{
-		Name:    name,
-		Content: content,
+
+	return pb.FileGetResponse_builder{
+		Contents: contents,
 	}.Build(), nil
 }
 
-func (e *execServer) FileAdd(c context.Context, fc *pb.FileContent) (*pb.FileID, error) {
+func (e *execServer) FileAdd(c context.Context, req *pb.FileAddRequest) (*pb.FileID, error) {
 	f, err := e.fs.New()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	defer f.Close()
 
-	if _, err := f.Write(fc.GetContent()); err != nil {
+	if _, err := f.Write(req.GetContent()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	fid, err := e.fs.Add(fc.GetName(), f.Name())
+	fid, err := e.fs.Add(req.GetName(), f.Name())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -122,10 +137,11 @@ func (e *execServer) FileAdd(c context.Context, fc *pb.FileContent) (*pb.FileID,
 	}.Build(), nil
 }
 
-func (e *execServer) FileDelete(c context.Context, f *pb.FileID) (*emptypb.Empty, error) {
-	ok := e.fs.Remove(f.GetFileID())
-	if !ok {
-		return nil, status.Errorf(codes.NotFound, "file id does not exists: %q", f.GetFileID())
+func (e *execServer) FileDelete(c context.Context, req *pb.FileDeleteRequest) (*emptypb.Empty, error) {
+	fileIDs := req.GetFileIDs()
+	// Delete all files, ignoring those that don't exist (treat as already deleted)
+	for _, fileID := range fileIDs {
+		e.fs.Remove(fileID)
 	}
 	return &emptypb.Empty{}, nil
 }
