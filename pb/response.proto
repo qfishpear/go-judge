@@ -50,8 +50,8 @@ message Response {
     StatusType status = 1;
     int32 exitStatus = 2;
     string error = 3;
-    uint64 time = 4;
-    uint64 runTime = 8;
+    uint64 time = 4;    // cpu time
+    uint64 runTime = 8; // clock time
     uint64 procPeak = 10;
     uint64 memory = 5;
     map<string, bytes> files = 6;

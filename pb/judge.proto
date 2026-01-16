@@ -27,16 +27,16 @@ service Executor {
   rpc ExecStream(stream StreamRequest) returns (stream StreamResponse);
 
   // FileList lists all files available in the file store
-  rpc FileList(google.protobuf.Empty) returns (FileListType);
-
-  // FileGet download the file from the file store
-  rpc FileGet(FileGetRequest) returns (FileContent);
+  rpc FileList(google.protobuf.Empty) returns (FileListResponse);
 
   // FileAdd create a file into the file store
-  rpc FileAdd(FileContent) returns (FileID);
+  rpc FileAdd(FileAddRequest) returns (FileID);
 
-  // FileDelete deletes a file from the file store
-  rpc FileDelete(FileID) returns (google.protobuf.Empty);
+  // FileGet download files from the file store (supports batch retrieval)
+  rpc FileGet(FileGetRequest) returns (FileGetResponse);
+
+  // FileDelete deletes files from the file store (supports batch deletion)
+  rpc FileDelete(FileDeleteRequest) returns (google.protobuf.Empty);
 
   // FileDownloadFromMinio download the file from minio and store it in file store. The download works in batch mode.
   // The presigned GET URLs are provided by the caller.

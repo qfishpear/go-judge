@@ -27,18 +27,17 @@ var File_judge_proto protoreflect.FileDescriptor
 const file_judge_proto_rawDesc = "" +
 	"\n" +
 	"\vjudge.proto\x12\x02pb\x1a\x1bgoogle/protobuf/empty.proto\x1a\rrequest.proto\x1a\x0eresponse.proto\x1a\x14stream_request.proto\x1a\x15stream_response.proto\x1a\n" +
-	"file.proto\x1a\vminio.proto\x1a!google/protobuf/go_features.proto2\xc3\x03\n" +
+	"file.proto\x1a\vminio.proto\x1a!google/protobuf/go_features.proto2\xd9\x03\n" +
 	"\bExecutor\x12!\n" +
 	"\x04Exec\x12\v.pb.Request\x1a\f.pb.Response\x127\n" +
 	"\n" +
-	"ExecStream\x12\x11.pb.StreamRequest\x1a\x12.pb.StreamResponse(\x010\x01\x124\n" +
-	"\bFileList\x12\x16.google.protobuf.Empty\x1a\x10.pb.FileListType\x12.\n" +
-	"\aFileGet\x12\x12.pb.FileGetRequest\x1a\x0f.pb.FileContent\x12&\n" +
-	"\aFileAdd\x12\x0f.pb.FileContent\x1a\n" +
-	".pb.FileID\x120\n" +
+	"ExecStream\x12\x11.pb.StreamRequest\x1a\x12.pb.StreamResponse(\x010\x01\x128\n" +
+	"\bFileList\x12\x16.google.protobuf.Empty\x1a\x14.pb.FileListResponse\x12)\n" +
+	"\aFileAdd\x12\x12.pb.FileAddRequest\x1a\n" +
+	".pb.FileID\x122\n" +
+	"\aFileGet\x12\x12.pb.FileGetRequest\x1a\x13.pb.FileGetResponse\x12;\n" +
 	"\n" +
-	"FileDelete\x12\n" +
-	".pb.FileID\x1a\x16.google.protobuf.Empty\x12T\n" +
+	"FileDelete\x12\x15.pb.FileDeleteRequest\x1a\x16.google.protobuf.Empty\x12T\n" +
 	"\x15FileDownloadFromMinio\x12\x1c.pb.DownloadFromMinioRequest\x1a\x1d.pb.DownloadFromMinioResponse\x12E\n" +
 	"\x11FileUploadToMinio\x12\x18.pb.UploadToMinioRequest\x1a\x16.google.protobuf.EmptyB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
 
@@ -46,32 +45,34 @@ var file_judge_proto_goTypes = []any{
 	(*Request)(nil),                   // 0: pb.Request
 	(*StreamRequest)(nil),             // 1: pb.StreamRequest
 	(*emptypb.Empty)(nil),             // 2: google.protobuf.Empty
-	(*FileGetRequest)(nil),            // 3: pb.FileGetRequest
-	(*FileContent)(nil),               // 4: pb.FileContent
-	(*FileID)(nil),                    // 5: pb.FileID
+	(*FileAddRequest)(nil),            // 3: pb.FileAddRequest
+	(*FileGetRequest)(nil),            // 4: pb.FileGetRequest
+	(*FileDeleteRequest)(nil),         // 5: pb.FileDeleteRequest
 	(*DownloadFromMinioRequest)(nil),  // 6: pb.DownloadFromMinioRequest
 	(*UploadToMinioRequest)(nil),      // 7: pb.UploadToMinioRequest
 	(*Response)(nil),                  // 8: pb.Response
 	(*StreamResponse)(nil),            // 9: pb.StreamResponse
-	(*FileListType)(nil),              // 10: pb.FileListType
-	(*DownloadFromMinioResponse)(nil), // 11: pb.DownloadFromMinioResponse
+	(*FileListResponse)(nil),          // 10: pb.FileListResponse
+	(*FileID)(nil),                    // 11: pb.FileID
+	(*FileGetResponse)(nil),           // 12: pb.FileGetResponse
+	(*DownloadFromMinioResponse)(nil), // 13: pb.DownloadFromMinioResponse
 }
 var file_judge_proto_depIdxs = []int32{
 	0,  // 0: pb.Executor.Exec:input_type -> pb.Request
 	1,  // 1: pb.Executor.ExecStream:input_type -> pb.StreamRequest
 	2,  // 2: pb.Executor.FileList:input_type -> google.protobuf.Empty
-	3,  // 3: pb.Executor.FileGet:input_type -> pb.FileGetRequest
-	4,  // 4: pb.Executor.FileAdd:input_type -> pb.FileContent
-	5,  // 5: pb.Executor.FileDelete:input_type -> pb.FileID
+	3,  // 3: pb.Executor.FileAdd:input_type -> pb.FileAddRequest
+	4,  // 4: pb.Executor.FileGet:input_type -> pb.FileGetRequest
+	5,  // 5: pb.Executor.FileDelete:input_type -> pb.FileDeleteRequest
 	6,  // 6: pb.Executor.FileDownloadFromMinio:input_type -> pb.DownloadFromMinioRequest
 	7,  // 7: pb.Executor.FileUploadToMinio:input_type -> pb.UploadToMinioRequest
 	8,  // 8: pb.Executor.Exec:output_type -> pb.Response
 	9,  // 9: pb.Executor.ExecStream:output_type -> pb.StreamResponse
-	10, // 10: pb.Executor.FileList:output_type -> pb.FileListType
-	4,  // 11: pb.Executor.FileGet:output_type -> pb.FileContent
-	5,  // 12: pb.Executor.FileAdd:output_type -> pb.FileID
+	10, // 10: pb.Executor.FileList:output_type -> pb.FileListResponse
+	11, // 11: pb.Executor.FileAdd:output_type -> pb.FileID
+	12, // 12: pb.Executor.FileGet:output_type -> pb.FileGetResponse
 	2,  // 13: pb.Executor.FileDelete:output_type -> google.protobuf.Empty
-	11, // 14: pb.Executor.FileDownloadFromMinio:output_type -> pb.DownloadFromMinioResponse
+	13, // 14: pb.Executor.FileDownloadFromMinio:output_type -> pb.DownloadFromMinioResponse
 	2,  // 15: pb.Executor.FileUploadToMinio:output_type -> google.protobuf.Empty
 	8,  // [8:16] is the sub-list for method output_type
 	0,  // [0:8] is the sub-list for method input_type
