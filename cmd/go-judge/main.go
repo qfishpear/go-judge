@@ -49,6 +49,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
 )
 
@@ -466,11 +467,15 @@ func newGRPCServer(conf *config.Config, esServer pb.ExecutorServer) *grpc.Server
 		streamMiddleware = append(streamMiddleware, grpc_auth.StreamServerInterceptor(authFunc))
 		unaryMiddleware = append(unaryMiddleware, grpc_auth.UnaryServerInterceptor(authFunc))
 	}
-
+	kaep := keepalive.EnforcementPolicy{
+		MinTime:             conf.GRPCKeepaliveMinTime,
+		PermitWithoutStream: true,
+	}
 	opts := []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(streamMiddleware...),
 		grpc.ChainUnaryInterceptor(unaryMiddleware...),
 		grpc.MaxRecvMsgSize(int(conf.GRPCMsgSize.Byte())),
+		grpc.KeepaliveEnforcementPolicy(kaep),
 	}
 
 	// Load mTLS credentials if configured
