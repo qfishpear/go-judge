@@ -53,6 +53,8 @@ type Config struct {
 	GRPCMtlsKey  string `flagUsage:"path to private key file for gRPC mTLS"`
 	GRPCMtlsCert string `flagUsage:"path to public key (certificate) file for gRPC mTLS"`
 
+	GRPCKeepaliveMinTime time.Duration `flagUsage:"minimum time between client pings for gRPC keepalive enforcement" default:"10s"`
+
 	// logger config
 	Release bool `flagUsage:"release level of logs"`
 	Silent  bool `flagUsage:"do not print logs"`
