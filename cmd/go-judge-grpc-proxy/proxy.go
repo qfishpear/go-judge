@@ -67,10 +67,14 @@ func (p *execProxy) FileGet(c *gin.Context) {
 		return
 	}
 
-	fid := pb.FileID_builder{
-		FileID: uri.FileID,
+	req := pb.FileGetRequest_builder{
+		Items: []*pb.FileGetRequest_FileGetRequestItem{
+			pb.FileGetRequest_FileGetRequestItem_builder{
+				FileID: uri.FileID,
+			}.Build(),
+		},
 	}.Build()
-	rep, err := p.client.FileGet(c, fid)
+	rep, err := p.client.FileGet(c, req)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

@@ -71,8 +71,8 @@ func (e *execServer) FileList(c context.Context, n *emptypb.Empty) (*pb.FileList
 }
 
 func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.FileGetResponse, error) {
-	fileIDs := req.GetFileIDs()
-	if len(fileIDs) == 0 {
+	items := req.GetItems()
+	if len(items) == 0 {
 		return pb.FileGetResponse_builder{
 			Contents: []*pb.FileGetResponse_FileContent{},
 		}.Build(), nil
@@ -81,10 +81,12 @@ func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.Fil
 	// gRPC's FileGet response is unary, so the complete file must be buffered
 	// before it can be returned. Keep the configured gRPC message-size limit in
 	// mind when choosing the maximum size of files exposed through this endpoint.
-	contents := make([]*pb.FileGetResponse_FileContent, 0, len(fileIDs))
-	truncateLength := req.GetTruncateLength()
+	contents := make([]*pb.FileGetResponse_FileContent, 0, len(items))
 
-	for _, fileID := range fileIDs {
+	for _, item := range items {
+		fileID := item.GetFileID()
+		truncateLength := item.GetTruncateLength()
+
 		_, file := e.fs.Get(fileID)
 		r, err := envexec.FileToReader(file)
 		if err != nil {
@@ -92,6 +94,7 @@ func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.Fil
 		}
 
 		var content []byte
+		var fileLength uint64
 		if truncateLength > 0 {
 			// If truncateLength is provided, limit reading to that many bytes
 			limitedReader := io.LimitReader(r, int64(truncateLength))
@@ -100,6 +103,20 @@ func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.Fil
 				r.Close()
 				return nil, status.Error(codes.Internal, err.Error())
 			}
+			r.Close()
+			fileLength = uint64(len(content))
+			// Get original file length only when content was truncated (len >= limit)
+			if fileLength >= truncateLength {
+				fi, ok := file.(*envexec.FileInput)
+				if !ok {
+					return nil, status.Errorf(codes.Internal, "file is not a file input: %q", fileID)
+				}
+				stat, statErr := os.Stat(fi.Path)
+				if statErr != nil {
+					return nil, status.Errorf(codes.Internal, "failed to get file length: %v", statErr)
+				}
+				fileLength = uint64(stat.Size())
+			}
 		} else {
 			// If truncateLength is not provided, read all content
 			content, err = io.ReadAll(r)
@@ -107,12 +124,14 @@ func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.Fil
 				r.Close()
 				return nil, status.Error(codes.Internal, err.Error())
 			}
+			r.Close()
+			fileLength = uint64(len(content))
 		}
-		r.Close()
 
 		contents = append(contents, pb.FileGetResponse_FileContent_builder{
 			FileId:  fileID,
 			Content: content,
+			Length:  fileLength,
 		}.Build())
 	}
 
