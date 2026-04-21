@@ -27,6 +27,7 @@ type Request struct {
 	xxx_hidden_RequestID   string                 `protobuf:"bytes,1,opt,name=requestID"`
 	xxx_hidden_Cmd         *[]*Request_CmdType    `protobuf:"bytes,2,rep,name=cmd"`
 	xxx_hidden_PipeMapping *[]*Request_PipeMap    `protobuf:"bytes,3,rep,name=pipeMapping"`
+	xxx_hidden_ShmMapping  *[]*Request_ShmMap     `protobuf:"bytes,4,rep,name=shmMapping"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -81,6 +82,15 @@ func (x *Request) GetPipeMapping() []*Request_PipeMap {
 	return nil
 }
 
+func (x *Request) GetShmMapping() []*Request_ShmMap {
+	if x != nil {
+		if x.xxx_hidden_ShmMapping != nil {
+			return *x.xxx_hidden_ShmMapping
+		}
+	}
+	return nil
+}
+
 func (x *Request) SetRequestID(v string) {
 	x.xxx_hidden_RequestID = v
 }
@@ -93,12 +103,17 @@ func (x *Request) SetPipeMapping(v []*Request_PipeMap) {
 	x.xxx_hidden_PipeMapping = &v
 }
 
+func (x *Request) SetShmMapping(v []*Request_ShmMap) {
+	x.xxx_hidden_ShmMapping = &v
+}
+
 type Request_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	RequestID   string
 	Cmd         []*Request_CmdType
 	PipeMapping []*Request_PipeMap
+	ShmMapping  []*Request_ShmMap
 }
 
 func (b0 Request_builder) Build() *Request {
@@ -108,6 +123,7 @@ func (b0 Request_builder) Build() *Request {
 	x.xxx_hidden_RequestID = b.RequestID
 	x.xxx_hidden_Cmd = &b.Cmd
 	x.xxx_hidden_PipeMapping = &b.PipeMapping
+	x.xxx_hidden_ShmMapping = &b.ShmMapping
 	return m0
 }
 
@@ -1122,32 +1138,28 @@ func (b0 Request_CmdCopyOutFile_builder) Build() *Request_CmdCopyOutFile {
 	return m0
 }
 
-type Request_PipeMap struct {
-	state                      protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_In              *Request_PipeMap_PipeIndex `protobuf:"bytes,1,opt,name=in"`
-	xxx_hidden_Out             *Request_PipeMap_PipeIndex `protobuf:"bytes,2,opt,name=out"`
-	xxx_hidden_Proxy           bool                       `protobuf:"varint,3,opt,name=proxy"`
-	xxx_hidden_Name            string                     `protobuf:"bytes,4,opt,name=name"`
-	xxx_hidden_Max             uint64                     `protobuf:"varint,5,opt,name=max"`
-	xxx_hidden_DisableZeroCopy bool                       `protobuf:"varint,6,opt,name=disableZeroCopy"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+type Request_CmdFdIndex struct {
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Index int32                  `protobuf:"varint,1,opt,name=index"`
+	xxx_hidden_Fd    int32                  `protobuf:"varint,2,opt,name=fd"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
-func (x *Request_PipeMap) Reset() {
-	*x = Request_PipeMap{}
+func (x *Request_CmdFdIndex) Reset() {
+	*x = Request_CmdFdIndex{}
 	mi := &file_request_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Request_PipeMap) String() string {
+func (x *Request_CmdFdIndex) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Request_PipeMap) ProtoMessage() {}
+func (*Request_CmdFdIndex) ProtoMessage() {}
 
-func (x *Request_PipeMap) ProtoReflect() protoreflect.Message {
+func (x *Request_CmdFdIndex) ProtoReflect() protoreflect.Message {
 	mi := &file_request_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1159,14 +1171,89 @@ func (x *Request_PipeMap) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *Request_PipeMap) GetIn() *Request_PipeMap_PipeIndex {
+func (x *Request_CmdFdIndex) GetIndex() int32 {
+	if x != nil {
+		return x.xxx_hidden_Index
+	}
+	return 0
+}
+
+func (x *Request_CmdFdIndex) GetFd() int32 {
+	if x != nil {
+		return x.xxx_hidden_Fd
+	}
+	return 0
+}
+
+func (x *Request_CmdFdIndex) SetIndex(v int32) {
+	x.xxx_hidden_Index = v
+}
+
+func (x *Request_CmdFdIndex) SetFd(v int32) {
+	x.xxx_hidden_Fd = v
+}
+
+type Request_CmdFdIndex_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Index int32
+	Fd    int32
+}
+
+func (b0 Request_CmdFdIndex_builder) Build() *Request_CmdFdIndex {
+	m0 := &Request_CmdFdIndex{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Index = b.Index
+	x.xxx_hidden_Fd = b.Fd
+	return m0
+}
+
+type Request_PipeMap struct {
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_In              *Request_CmdFdIndex    `protobuf:"bytes,1,opt,name=in"`
+	xxx_hidden_Out             *Request_CmdFdIndex    `protobuf:"bytes,2,opt,name=out"`
+	xxx_hidden_Proxy           bool                   `protobuf:"varint,3,opt,name=proxy"`
+	xxx_hidden_Name            string                 `protobuf:"bytes,4,opt,name=name"`
+	xxx_hidden_Max             uint64                 `protobuf:"varint,5,opt,name=max"`
+	xxx_hidden_DisableZeroCopy bool                   `protobuf:"varint,6,opt,name=disableZeroCopy"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
+}
+
+func (x *Request_PipeMap) Reset() {
+	*x = Request_PipeMap{}
+	mi := &file_request_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Request_PipeMap) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Request_PipeMap) ProtoMessage() {}
+
+func (x *Request_PipeMap) ProtoReflect() protoreflect.Message {
+	mi := &file_request_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Request_PipeMap) GetIn() *Request_CmdFdIndex {
 	if x != nil {
 		return x.xxx_hidden_In
 	}
 	return nil
 }
 
-func (x *Request_PipeMap) GetOut() *Request_PipeMap_PipeIndex {
+func (x *Request_PipeMap) GetOut() *Request_CmdFdIndex {
 	if x != nil {
 		return x.xxx_hidden_Out
 	}
@@ -1201,11 +1288,11 @@ func (x *Request_PipeMap) GetDisableZeroCopy() bool {
 	return false
 }
 
-func (x *Request_PipeMap) SetIn(v *Request_PipeMap_PipeIndex) {
+func (x *Request_PipeMap) SetIn(v *Request_CmdFdIndex) {
 	x.xxx_hidden_In = v
 }
 
-func (x *Request_PipeMap) SetOut(v *Request_PipeMap_PipeIndex) {
+func (x *Request_PipeMap) SetOut(v *Request_CmdFdIndex) {
 	x.xxx_hidden_Out = v
 }
 
@@ -1250,8 +1337,8 @@ func (x *Request_PipeMap) ClearOut() {
 type Request_PipeMap_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	In              *Request_PipeMap_PipeIndex
-	Out             *Request_PipeMap_PipeIndex
+	In              *Request_CmdFdIndex
+	Out             *Request_CmdFdIndex
 	Proxy           bool
 	Name            string
 	Max             uint64
@@ -1271,29 +1358,34 @@ func (b0 Request_PipeMap_builder) Build() *Request_PipeMap {
 	return m0
 }
 
-type Request_PipeMap_PipeIndex struct {
-	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Index int32                  `protobuf:"varint,1,opt,name=index"`
-	xxx_hidden_Fd    int32                  `protobuf:"varint,2,opt,name=fd"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+// ShmMap shares a single memfd-backed shared memory region between multiple
+// commands. The region is created by go-judge with the requested size and
+// sealed (shrink/grow/seal). Each entry in `targets` reserves a file
+// descriptor slot on the corresponding cmd; the slot in that cmd's `files`
+// list must be empty (oneof unset).
+type Request_ShmMap struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Size    uint64                 `protobuf:"varint,1,opt,name=size"`
+	xxx_hidden_Targets *[]*Request_CmdFdIndex `protobuf:"bytes,2,rep,name=targets"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
-func (x *Request_PipeMap_PipeIndex) Reset() {
-	*x = Request_PipeMap_PipeIndex{}
-	mi := &file_request_proto_msgTypes[11]
+func (x *Request_ShmMap) Reset() {
+	*x = Request_ShmMap{}
+	mi := &file_request_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Request_PipeMap_PipeIndex) String() string {
+func (x *Request_ShmMap) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Request_PipeMap_PipeIndex) ProtoMessage() {}
+func (*Request_ShmMap) ProtoMessage() {}
 
-func (x *Request_PipeMap_PipeIndex) ProtoReflect() protoreflect.Message {
-	mi := &file_request_proto_msgTypes[11]
+func (x *Request_ShmMap) ProtoReflect() protoreflect.Message {
+	mi := &file_request_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1304,41 +1396,43 @@ func (x *Request_PipeMap_PipeIndex) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *Request_PipeMap_PipeIndex) GetIndex() int32 {
+func (x *Request_ShmMap) GetSize() uint64 {
 	if x != nil {
-		return x.xxx_hidden_Index
+		return x.xxx_hidden_Size
 	}
 	return 0
 }
 
-func (x *Request_PipeMap_PipeIndex) GetFd() int32 {
+func (x *Request_ShmMap) GetTargets() []*Request_CmdFdIndex {
 	if x != nil {
-		return x.xxx_hidden_Fd
+		if x.xxx_hidden_Targets != nil {
+			return *x.xxx_hidden_Targets
+		}
 	}
-	return 0
+	return nil
 }
 
-func (x *Request_PipeMap_PipeIndex) SetIndex(v int32) {
-	x.xxx_hidden_Index = v
+func (x *Request_ShmMap) SetSize(v uint64) {
+	x.xxx_hidden_Size = v
 }
 
-func (x *Request_PipeMap_PipeIndex) SetFd(v int32) {
-	x.xxx_hidden_Fd = v
+func (x *Request_ShmMap) SetTargets(v []*Request_CmdFdIndex) {
+	x.xxx_hidden_Targets = &v
 }
 
-type Request_PipeMap_PipeIndex_builder struct {
+type Request_ShmMap_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Index int32
-	Fd    int32
+	Size    uint64
+	Targets []*Request_CmdFdIndex
 }
 
-func (b0 Request_PipeMap_PipeIndex_builder) Build() *Request_PipeMap_PipeIndex {
-	m0 := &Request_PipeMap_PipeIndex{}
+func (b0 Request_ShmMap_builder) Build() *Request_ShmMap {
+	m0 := &Request_ShmMap{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Index = b.Index
-	x.xxx_hidden_Fd = b.Fd
+	x.xxx_hidden_Size = b.Size
+	x.xxx_hidden_Targets = &b.Targets
 	return m0
 }
 
@@ -1346,11 +1440,14 @@ var File_request_proto protoreflect.FileDescriptor
 
 const file_request_proto_rawDesc = "" +
 	"\n" +
-	"\rrequest.proto\x12\x02pb\x1a\x1bgoogle/protobuf/empty.proto\x1a!google/protobuf/go_features.proto\"\xe3\x0e\n" +
+	"\rrequest.proto\x12\x02pb\x1a\x1bgoogle/protobuf/empty.proto\x1a!google/protobuf/go_features.proto\"\xda\x0f\n" +
 	"\aRequest\x12\x1c\n" +
 	"\trequestID\x18\x01 \x01(\tR\trequestID\x12%\n" +
 	"\x03cmd\x18\x02 \x03(\v2\x13.pb.Request.CmdTypeR\x03cmd\x125\n" +
-	"\vpipeMapping\x18\x03 \x03(\v2\x13.pb.Request.PipeMapR\vpipeMapping\x1a\x1d\n" +
+	"\vpipeMapping\x18\x03 \x03(\v2\x13.pb.Request.PipeMapR\vpipeMapping\x122\n" +
+	"\n" +
+	"shmMapping\x18\x04 \x03(\v2\x12.pb.Request.ShmMapR\n" +
+	"shmMapping\x1a\x1d\n" +
 	"\tLocalFile\x12\x10\n" +
 	"\x03src\x18\x01 \x01(\tR\x03src\x1a&\n" +
 	"\n" +
@@ -1407,56 +1504,63 @@ const file_request_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a@\n" +
 	"\x0eCmdCopyOutFile\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
-	"\boptional\x18\x02 \x01(\bR\boptional\x1a\x82\x02\n" +
-	"\aPipeMap\x12-\n" +
-	"\x02in\x18\x01 \x01(\v2\x1d.pb.Request.PipeMap.PipeIndexR\x02in\x12/\n" +
-	"\x03out\x18\x02 \x01(\v2\x1d.pb.Request.PipeMap.PipeIndexR\x03out\x12\x14\n" +
+	"\boptional\x18\x02 \x01(\bR\boptional\x1a2\n" +
+	"\n" +
+	"CmdFdIndex\x12\x14\n" +
+	"\x05index\x18\x01 \x01(\x05R\x05index\x12\x0e\n" +
+	"\x02fd\x18\x02 \x01(\x05R\x02fd\x1a\xc1\x01\n" +
+	"\aPipeMap\x12&\n" +
+	"\x02in\x18\x01 \x01(\v2\x16.pb.Request.CmdFdIndexR\x02in\x12(\n" +
+	"\x03out\x18\x02 \x01(\v2\x16.pb.Request.CmdFdIndexR\x03out\x12\x14\n" +
 	"\x05proxy\x18\x03 \x01(\bR\x05proxy\x12\x12\n" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x12\x10\n" +
 	"\x03max\x18\x05 \x01(\x04R\x03max\x12(\n" +
-	"\x0fdisableZeroCopy\x18\x06 \x01(\bR\x0fdisableZeroCopy\x1a1\n" +
-	"\tPipeIndex\x12\x14\n" +
-	"\x05index\x18\x01 \x01(\x05R\x05index\x12\x0e\n" +
-	"\x02fd\x18\x02 \x01(\x05R\x02fdB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
+	"\x0fdisableZeroCopy\x18\x06 \x01(\bR\x0fdisableZeroCopy\x1aN\n" +
+	"\x06ShmMap\x12\x12\n" +
+	"\x04size\x18\x01 \x01(\x04R\x04size\x120\n" +
+	"\atargets\x18\x02 \x03(\v2\x16.pb.Request.CmdFdIndexR\atargetsB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
 
-var file_request_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_request_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_request_proto_goTypes = []any{
-	(*Request)(nil),                   // 0: pb.Request
-	(*Request_LocalFile)(nil),         // 1: pb.Request.LocalFile
-	(*Request_MemoryFile)(nil),        // 2: pb.Request.MemoryFile
-	(*Request_CachedFile)(nil),        // 3: pb.Request.CachedFile
-	(*Request_PipeCollector)(nil),     // 4: pb.Request.PipeCollector
-	(*Request_File)(nil),              // 5: pb.Request.File
-	(*Request_CmdType)(nil),           // 6: pb.Request.CmdType
-	(*Request_CmdCopyOutFile)(nil),    // 7: pb.Request.CmdCopyOutFile
-	(*Request_PipeMap)(nil),           // 8: pb.Request.PipeMap
-	nil,                               // 9: pb.Request.CmdType.CopyInEntry
-	nil,                               // 10: pb.Request.CmdType.SymlinksEntry
-	(*Request_PipeMap_PipeIndex)(nil), // 11: pb.Request.PipeMap.PipeIndex
-	(*emptypb.Empty)(nil),             // 12: google.protobuf.Empty
+	(*Request)(nil),                // 0: pb.Request
+	(*Request_LocalFile)(nil),      // 1: pb.Request.LocalFile
+	(*Request_MemoryFile)(nil),     // 2: pb.Request.MemoryFile
+	(*Request_CachedFile)(nil),     // 3: pb.Request.CachedFile
+	(*Request_PipeCollector)(nil),  // 4: pb.Request.PipeCollector
+	(*Request_File)(nil),           // 5: pb.Request.File
+	(*Request_CmdType)(nil),        // 6: pb.Request.CmdType
+	(*Request_CmdCopyOutFile)(nil), // 7: pb.Request.CmdCopyOutFile
+	(*Request_CmdFdIndex)(nil),     // 8: pb.Request.CmdFdIndex
+	(*Request_PipeMap)(nil),        // 9: pb.Request.PipeMap
+	(*Request_ShmMap)(nil),         // 10: pb.Request.ShmMap
+	nil,                            // 11: pb.Request.CmdType.CopyInEntry
+	nil,                            // 12: pb.Request.CmdType.SymlinksEntry
+	(*emptypb.Empty)(nil),          // 13: google.protobuf.Empty
 }
 var file_request_proto_depIdxs = []int32{
 	6,  // 0: pb.Request.cmd:type_name -> pb.Request.CmdType
-	8,  // 1: pb.Request.pipeMapping:type_name -> pb.Request.PipeMap
-	1,  // 2: pb.Request.File.local:type_name -> pb.Request.LocalFile
-	2,  // 3: pb.Request.File.memory:type_name -> pb.Request.MemoryFile
-	3,  // 4: pb.Request.File.cached:type_name -> pb.Request.CachedFile
-	4,  // 5: pb.Request.File.pipe:type_name -> pb.Request.PipeCollector
-	12, // 6: pb.Request.File.streamIn:type_name -> google.protobuf.Empty
-	12, // 7: pb.Request.File.streamOut:type_name -> google.protobuf.Empty
-	5,  // 8: pb.Request.CmdType.files:type_name -> pb.Request.File
-	9,  // 9: pb.Request.CmdType.copyIn:type_name -> pb.Request.CmdType.CopyInEntry
-	10, // 10: pb.Request.CmdType.symlinks:type_name -> pb.Request.CmdType.SymlinksEntry
-	7,  // 11: pb.Request.CmdType.copyOut:type_name -> pb.Request.CmdCopyOutFile
-	7,  // 12: pb.Request.CmdType.copyOutCached:type_name -> pb.Request.CmdCopyOutFile
-	11, // 13: pb.Request.PipeMap.in:type_name -> pb.Request.PipeMap.PipeIndex
-	11, // 14: pb.Request.PipeMap.out:type_name -> pb.Request.PipeMap.PipeIndex
-	5,  // 15: pb.Request.CmdType.CopyInEntry.value:type_name -> pb.Request.File
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	9,  // 1: pb.Request.pipeMapping:type_name -> pb.Request.PipeMap
+	10, // 2: pb.Request.shmMapping:type_name -> pb.Request.ShmMap
+	1,  // 3: pb.Request.File.local:type_name -> pb.Request.LocalFile
+	2,  // 4: pb.Request.File.memory:type_name -> pb.Request.MemoryFile
+	3,  // 5: pb.Request.File.cached:type_name -> pb.Request.CachedFile
+	4,  // 6: pb.Request.File.pipe:type_name -> pb.Request.PipeCollector
+	13, // 7: pb.Request.File.streamIn:type_name -> google.protobuf.Empty
+	13, // 8: pb.Request.File.streamOut:type_name -> google.protobuf.Empty
+	5,  // 9: pb.Request.CmdType.files:type_name -> pb.Request.File
+	11, // 10: pb.Request.CmdType.copyIn:type_name -> pb.Request.CmdType.CopyInEntry
+	12, // 11: pb.Request.CmdType.symlinks:type_name -> pb.Request.CmdType.SymlinksEntry
+	7,  // 12: pb.Request.CmdType.copyOut:type_name -> pb.Request.CmdCopyOutFile
+	7,  // 13: pb.Request.CmdType.copyOutCached:type_name -> pb.Request.CmdCopyOutFile
+	8,  // 14: pb.Request.PipeMap.in:type_name -> pb.Request.CmdFdIndex
+	8,  // 15: pb.Request.PipeMap.out:type_name -> pb.Request.CmdFdIndex
+	8,  // 16: pb.Request.ShmMap.targets:type_name -> pb.Request.CmdFdIndex
+	5,  // 17: pb.Request.CmdType.CopyInEntry.value:type_name -> pb.Request.File
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_request_proto_init() }
@@ -1478,7 +1582,7 @@ func file_request_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_request_proto_rawDesc), len(file_request_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

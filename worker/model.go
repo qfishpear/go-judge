@@ -12,7 +12,8 @@ import (
 type Size = envexec.Size
 type CmdCopyOutFile = envexec.CmdCopyOutFile
 type PipeMap = envexec.Pipe
-type PipeIndex = envexec.PipeIndex
+type ShmMap = envexec.Shm
+type CmdFdIndex = envexec.CmdFdIndex
 type FileError = envexec.FileError
 
 // Cmd defines command and limits to start a program using in envexec
@@ -49,6 +50,7 @@ type Request struct {
 	RequestID   string
 	Cmd         []Cmd
 	PipeMapping []PipeMap
+	ShmMapping  []ShmMap
 }
 
 // Result defines single command response
