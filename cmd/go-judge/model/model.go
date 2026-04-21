@@ -61,20 +61,20 @@ type Cmd struct {
 	AddressSpaceLimit bool `json:"addressSpaceLimit"`
 }
 
-// PipeIndex defines indexing for a pipe fd
-type PipeIndex struct {
+// CmdFdIndex indexes a specific fd slot on a specific cmd in the request.
+type CmdFdIndex struct {
 	Index int `json:"index"`
 	Fd    int `json:"fd"`
 }
 
 // PipeMap defines in / out pipe for multiple program
 type PipeMap struct {
-	In              PipeIndex `json:"in"`
-	Out             PipeIndex `json:"out"`
-	Name            string    `json:"name"`
-	Max             int64     `json:"max"`
-	Proxy           bool      `json:"proxy"`
-	DisableZeroCopy bool      `json:"disableZeroCopy"`
+	In              CmdFdIndex `json:"in"`
+	Out             CmdFdIndex `json:"out"`
+	Name            string     `json:"name"`
+	Max             int64      `json:"max"`
+	Proxy           bool       `json:"proxy"`
+	DisableZeroCopy bool       `json:"disableZeroCopy"`
 }
 
 // Request defines single worker request
@@ -283,11 +283,11 @@ func convertResult(r worker.Result, mmap bool) (Result, error) {
 
 func convertPipe(p PipeMap) worker.PipeMap {
 	return worker.PipeMap{
-		In: worker.PipeIndex{
+		In: worker.CmdFdIndex{
 			Index: p.In.Index,
 			Fd:    p.In.Fd,
 		},
-		Out: worker.PipeIndex{
+		Out: worker.CmdFdIndex{
 			Index: p.Out.Index,
 			Fd:    p.Out.Fd,
 		},

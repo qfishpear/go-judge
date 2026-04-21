@@ -69,21 +69,32 @@ message Request {
     bool optional = 2;
   }
 
-  message PipeMap {
-    message PipeIndex {
-      int32 index = 1;
-      int32 fd = 2;
-    }
+  message CmdFdIndex {
+    int32 index = 1;
+    int32 fd = 2;
+  }
 
-    PipeIndex in = 1;
-    PipeIndex out = 2;
+  message PipeMap {
+    CmdFdIndex in = 1;
+    CmdFdIndex out = 2;
     bool proxy = 3;
     string name = 4;
     uint64 max = 5;
     bool disableZeroCopy = 6;
   }
 
+  // ShmMap shares a single memfd-backed shared memory region between multiple
+  // commands. The region is created by go-judge with the requested size and
+  // sealed (shrink/grow/seal). Each entry in `targets` reserves a file
+  // descriptor slot on the corresponding cmd; the slot in that cmd's `files`
+  // list must be empty (oneof unset).
+  message ShmMap {
+    uint64 size = 1;
+    repeated CmdFdIndex targets = 2;
+  }
+
   string requestID = 1;
   repeated CmdType cmd = 2;
   repeated PipeMap pipeMapping = 3;
+  repeated ShmMap shmMapping = 4;
 }

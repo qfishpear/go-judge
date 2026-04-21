@@ -261,8 +261,8 @@ func TestResult_String(t *testing.T) {
 
 func TestConvertPipe(t *testing.T) {
 	p := PipeMap{
-		In:    PipeIndex{Index: 1, Fd: 2},
-		Out:   PipeIndex{Index: 3, Fd: 4},
+		In:    CmdFdIndex{Index: 1, Fd: 2},
+		Out:   CmdFdIndex{Index: 3, Fd: 4},
 		Name:  "pipe",
 		Max:   100,
 		Proxy: true,

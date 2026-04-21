@@ -16,12 +16,17 @@ type Group struct {
 	// ensure nil is used as placeholder in correspond cmd
 	Pipes []Pipe
 
+	// Shms defines memfd-backed shared memory regions shared between multiple
+	// Cmd. Each Shm entry reserves one or more file descriptor slots on the
+	// referenced cmds; the slot in that cmd's Files list must be nil.
+	Shms []Shm
+
 	// NewStoreFile defines interface to create stored file
 	NewStoreFile NewStoreFile
 }
 
-// PipeIndex defines the index of cmd and the fd of the that cmd
-type PipeIndex struct {
+// CmdFdIndex points to a specific fd slot of a specific Cmd inside a Group.
+type CmdFdIndex struct {
 	Index int
 	Fd    int
 }
@@ -29,7 +34,7 @@ type PipeIndex struct {
 // Pipe defines the pipe between parallel Cmd
 type Pipe struct {
 	// In, Out defines the pipe input source and output destination
-	In, Out PipeIndex
+	In, Out CmdFdIndex
 
 	// CPUSet pins the proxy relay thread to the same cpuset as the commands.
 	CPUSet string
@@ -46,6 +51,15 @@ type Pipe struct {
 
 	// Disable no copy on Linux
 	DisableZeroCopy bool
+}
+
+// Shm defines a shared memory region backed by a memfd created by the parent.
+// The memfd is created with the given Size, sealed with F_SEAL_SHRINK |
+// F_SEAL_GROW | F_SEAL_SEAL, and placed (as O_RDWR) at every (Index, Fd)
+// position in Targets. Typical usage is for the cmds to mmap this fd.
+type Shm struct {
+	Size    Size
+	Targets []CmdFdIndex
 }
 
 // Run starts the cmd and returns exec results

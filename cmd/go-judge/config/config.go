@@ -33,6 +33,7 @@ type Config struct {
 	OutputLimit              *envexec.Size `flagUsage:"specifies POSIX rlimit for output for each command" default:"256m"`
 	CopyOutLimit             *envexec.Size `flagUsage:"specifies default file copy out max" default:"256m"`
 	OpenFileLimit            int           `flagUsage:"specifies max open file count" default:"256"`
+	ShmMaxSize               *envexec.Size `flagUsage:"specifies maximum size for each shared memory region (memfd) requested via ShmMap" default:"256m"`
 	Cpuset                   []string      `flagUsage:"control the usage of cpuset for all container process"`
 	EnableCPURate            bool          `flagUsage:"enable cpu cgroup rate control"`
 	CPUCfsPeriod             time.Duration `flagUsage:"set cpu.cfs_period" default:"100ms"`

@@ -393,6 +393,7 @@ func convertPBRequest(r *pb.Request, srcPrefix []string) (req *worker.Request, e
 		RequestID:   r.GetRequestID(),
 		Cmd:         make([]worker.Cmd, 0, len(r.GetCmd())),
 		PipeMapping: make([]worker.PipeMap, 0, len(r.GetPipeMapping())),
+		ShmMapping:  make([]worker.ShmMap, 0, len(r.GetShmMapping())),
 	}
 	for _, c := range r.GetCmd() {
 		cm, err := convertPBCmd(c, srcPrefix)
@@ -405,21 +406,35 @@ func convertPBRequest(r *pb.Request, srcPrefix []string) (req *worker.Request, e
 		pm := convertPBPipeMap(p)
 		req.PipeMapping = append(req.PipeMapping, pm)
 	}
+	for _, s := range r.GetShmMapping() {
+		req.ShmMapping = append(req.ShmMapping, convertPBShmMap(s))
+	}
 	return req, nil
 }
 
 func convertPBPipeMap(p *pb.Request_PipeMap) worker.PipeMap {
 	return worker.PipeMap{
-		In:    convertPBPipeIndex(p.GetIn()),
-		Out:   convertPBPipeIndex(p.GetOut()),
+		In:    convertPBCmdFdIndex(p.GetIn()),
+		Out:   convertPBCmdFdIndex(p.GetOut()),
 		Proxy: p.GetProxy(),
 		Name:  p.GetName(),
 		Limit: worker.Size(p.GetMax()),
 	}
 }
 
-func convertPBPipeIndex(p *pb.Request_PipeMap_PipeIndex) worker.PipeIndex {
-	return worker.PipeIndex{Index: int(p.GetIndex()), Fd: int(p.GetFd())}
+func convertPBShmMap(s *pb.Request_ShmMap) worker.ShmMap {
+	targets := make([]worker.CmdFdIndex, 0, len(s.GetTargets()))
+	for _, t := range s.GetTargets() {
+		targets = append(targets, convertPBCmdFdIndex(t))
+	}
+	return worker.ShmMap{
+		Size:    worker.Size(s.GetSize()),
+		Targets: targets,
+	}
+}
+
+func convertPBCmdFdIndex(p *pb.Request_CmdFdIndex) worker.CmdFdIndex {
+	return worker.CmdFdIndex{Index: int(p.GetIndex()), Fd: int(p.GetFd())}
 }
 
 func convertPBCmd(c *pb.Request_CmdType, srcPrefix []string) (cm worker.Cmd, err error) {

@@ -618,6 +618,7 @@ func newWorker(conf *config.Config, envPool worker.EnvironmentPool, fs filestore
 		OutputLimit:           *conf.OutputLimit,
 		CopyOutLimit:          *conf.CopyOutLimit,
 		OpenFileLimit:         uint64(conf.OpenFileLimit),
+		ShmMaxSize:            *conf.ShmMaxSize,
 		ExecObserver:          execObserve,
 		CPUSets:               conf.Cpuset,
 	})

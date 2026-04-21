@@ -249,8 +249,8 @@ func convertPBPipeMapping(pm []model.PipeMap) []*pb.Request_PipeMap {
 	var ret []*pb.Request_PipeMap
 	for _, p := range pm {
 		ret = append(ret, pb.Request_PipeMap_builder{
-			In:    convertPBPipeIndex(p.In),
-			Out:   convertPBPipeIndex(p.Out),
+			In:    convertPBCmdFdIndex(p.In),
+			Out:   convertPBCmdFdIndex(p.Out),
 			Name:  p.Name,
 			Proxy: p.Proxy,
 			Max:   uint64(p.Max),
@@ -259,8 +259,8 @@ func convertPBPipeMapping(pm []model.PipeMap) []*pb.Request_PipeMap {
 	return ret
 }
 
-func convertPBPipeIndex(pi model.PipeIndex) *pb.Request_PipeMap_PipeIndex {
-	return pb.Request_PipeMap_PipeIndex_builder{Index: int32(pi.Index), Fd: int32(pi.Fd)}.Build()
+func convertPBCmdFdIndex(pi model.CmdFdIndex) *pb.Request_CmdFdIndex {
+	return pb.Request_CmdFdIndex_builder{Index: int32(pi.Index), Fd: int32(pi.Fd)}.Build()
 }
 
 type tokenAuth struct {

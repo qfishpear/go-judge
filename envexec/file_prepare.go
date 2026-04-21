@@ -355,6 +355,35 @@ func prepareFds(r *Group, newStoreFile NewStoreFile) (f [][]*os.File, p [][]pipe
 		}
 	}
 
+	// prepare shared memory regions
+	for _, s := range r.Shms {
+		// Validate all target slots before creating the memfd so a conflict
+		// does not leak the master fd.
+		for _, t := range s.Targets {
+			if files[t.Index][t.Fd] != nil {
+				return nil, nil, fmt.Errorf("shm: mapping to existing file descriptor: %d/%d", t.Index, t.Fd)
+			}
+		}
+		master, err := newShmMaster(s.Size)
+		if err != nil {
+			return nil, nil, err
+		}
+		shmErr := func() error {
+			for _, t := range s.Targets {
+				dup, err := dupShm(master)
+				if err != nil {
+					return err
+				}
+				files[t.Index][t.Fd] = dup
+			}
+			return nil
+		}()
+		master.Close()
+		if shmErr != nil {
+			return nil, nil, shmErr
+		}
+	}
+
 	// null check
 	for i, fds := range files {
 		for j, f := range fds {
@@ -372,12 +401,34 @@ func countFd(r *Group) ([]int, error) {
 		fdCount[i] = len(c.Files)
 	}
 	for _, pi := range r.Pipes {
-		for _, p := range []PipeIndex{pi.In, pi.Out} {
+		for _, p := range []CmdFdIndex{pi.In, pi.Out} {
 			if p.Index < 0 || p.Index >= len(r.Cmd) {
 				return nil, fmt.Errorf("pipe: index out of range %v", p.Index)
 			}
 			if p.Fd < len(r.Cmd[p.Index].Files) && r.Cmd[p.Index].Files[p.Fd] != nil {
 				return nil, fmt.Errorf("pipe: fd already occupied %v %v", p.Index, p.Fd)
+			}
+			if p.Fd+1 > fdCount[p.Index] {
+				fdCount[p.Index] = p.Fd + 1
+			}
+		}
+	}
+	for _, s := range r.Shms {
+		if len(s.Targets) == 0 {
+			return nil, fmt.Errorf("shm: targets must not be empty")
+		}
+		if s.Size == 0 {
+			return nil, fmt.Errorf("shm: size must be positive")
+		}
+		for _, p := range s.Targets {
+			if p.Index < 0 || p.Index >= len(r.Cmd) {
+				return nil, fmt.Errorf("shm: index out of range %v", p.Index)
+			}
+			if p.Fd < 0 {
+				return nil, fmt.Errorf("shm: negative fd %v", p.Fd)
+			}
+			if p.Fd < len(r.Cmd[p.Index].Files) && r.Cmd[p.Index].Files[p.Fd] != nil {
+				return nil, fmt.Errorf("shm: fd already occupied %v %v", p.Index, p.Fd)
 			}
 			if p.Fd+1 > fdCount[p.Index] {
 				fdCount[p.Index] = p.Fd + 1
