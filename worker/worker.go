@@ -32,6 +32,7 @@ type Config struct {
 	OutputLimit           envexec.Size
 	CopyOutLimit          envexec.Size
 	OpenFileLimit         uint64
+	ShmMaxSize            envexec.Size
 	ExecObserver          func(Response)
 	CPUSets               []string
 }
@@ -63,6 +64,7 @@ type worker struct {
 	outputLimit           envexec.Size
 	copyOutLimit          envexec.Size
 	openFileLimit         uint64
+	shmMaxSize            envexec.Size
 	cpuSets               []string
 
 	execObserver func(Response)
@@ -95,6 +97,7 @@ func New(conf Config) Worker {
 		outputLimit:           conf.OutputLimit,
 		copyOutLimit:          conf.CopyOutLimit,
 		openFileLimit:         conf.OpenFileLimit,
+		shmMaxSize:            conf.ShmMaxSize,
 		cpuSets:               conf.CPUSets,
 		execObserver:          conf.ExecObserver,
 	}
@@ -219,16 +222,39 @@ func (w *worker) workDoCmd(ctx context.Context, req *Request, cpuset string) Res
 	defer w.running.Add(-1)
 
 	var rt Response
-	if len(req.Cmd) == 1 {
+	if err := w.validateShmMapping(req.ShmMapping); err != nil {
+		rt = Response{Error: err}
+	} else if len(req.Cmd) == 1 && len(req.ShmMapping) == 0 {
 		rt = w.workDoSingle(ctx, req.Cmd[0], cpuset)
 	} else {
-		rt = w.workDoGroup(ctx, req.Cmd, req.PipeMapping, cpuset)
+		rt = w.workDoGroup(ctx, req.Cmd, req.PipeMapping, req.ShmMapping, cpuset)
 	}
 	rt.RequestID = req.RequestID
 	if w.execObserver != nil {
 		w.execObserver(rt)
 	}
 	return rt
+}
+
+// validateShmMapping ensures each requested shared memory region is within
+// the server-side size limit configured via ShmMaxSize. It does not check
+// target slot occupancy; that is done later in envexec.prepareFds.
+func (w *worker) validateShmMapping(shms []ShmMap) error {
+	if len(shms) == 0 {
+		return nil
+	}
+	if w.shmMaxSize == 0 {
+		return fmt.Errorf("shm: shared memory is disabled on this server")
+	}
+	for i, s := range shms {
+		if s.Size == 0 {
+			return fmt.Errorf("shm[%d]: size must be positive", i)
+		}
+		if s.Size > w.shmMaxSize {
+			return fmt.Errorf("shm[%d]: size %d exceeds server limit %d", i, s.Size, w.shmMaxSize)
+		}
+	}
+	return nil
 }
 
 func (w *worker) workDoSingle(ctx context.Context, rc Cmd, cpuset string) (rt Response) {
@@ -262,7 +288,7 @@ func (w *worker) workDoSingle(ctx context.Context, rc Cmd, cpuset string) (rt Re
 	return
 }
 
-func (w *worker) workDoGroup(ctx context.Context, rc []Cmd, pm []PipeMap, cpuset string) (rt Response) {
+func (w *worker) workDoGroup(ctx context.Context, rc []Cmd, pm []PipeMap, sm []ShmMap, cpuset string) (rt Response) {
 	var rts []Result
 	cs := make([]*envexec.Cmd, 0, len(rc))
 	pipes := make([]PipeMap, 0, len(pm))
@@ -297,6 +323,7 @@ func (w *worker) workDoGroup(ctx context.Context, rc []Cmd, pm []PipeMap, cpuset
 	g := envexec.Group{
 		Cmd:          cs,
 		Pipes:        pipes,
+		Shms:         sm,
 		NewStoreFile: w.fs.New,
 	}
 	results, err := g.Run(ctx)
