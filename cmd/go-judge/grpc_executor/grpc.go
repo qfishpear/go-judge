@@ -1,11 +1,13 @@
 package grpcexecutor
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/criyle/go-judge/cmd/go-judge/model"
@@ -261,6 +263,115 @@ func (e *execServer) FileDownloadFromMinio(ctx context.Context, req *pb.Download
 	}.Build(), nil
 }
 
+// newMinioPutRequest builds a PUT for a presigned MinIO URL.
+//
+// MinIO requires a Content-Length on PUT and rejects chunked transfer-encoding
+// (HTTP 411 MissingContentLength). net/http only auto-derives the body length
+// for *bytes.Buffer / *bytes.Reader / *strings.Reader; otherwise req.ContentLength
+// stays 0, which Transport treats as "unknown" and turns into chunked encoding.
+//
+// To stream large judge artifacts straight from disk we set req.ContentLength
+// explicitly. With ContentLength >= 0 net/http skips chunking and writes a
+// real Content-Length header, while writeBody copies the body through
+// io.LimitReader without buffering the whole file in memory.
+func newMinioPutRequest(ctx context.Context, presignedURL, headerName string, file envexec.File) (*http.Request, error) {
+	setHeaders := func(req *http.Request) {
+		if headerName != "" {
+			req.Header.Set("Content-Type", "application/octet-stream")
+		}
+	}
+
+	switch f := file.(type) {
+	case *envexec.FileInput:
+		path := f.Path
+		st, err := os.Stat(path)
+		if err != nil {
+			return nil, err
+		}
+		size := st.Size()
+		// Zero-byte body: avoid (*os.File, ContentLength=0), which Request.outgoingLength
+		// reads as "unknown length" and turns into chunked transfer-encoding — MinIO 411s.
+		// Use http.NoBody so net/http writes a proper "Content-Length: 0".
+		if size == 0 {
+			httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, http.NoBody)
+			if err != nil {
+				return nil, err
+			}
+			setHeaders(httpReq)
+			return httpReq, nil
+		}
+		fp, err := os.Open(path)
+		if err != nil {
+			return nil, err
+		}
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, fp)
+		if err != nil {
+			fp.Close()
+			return nil, err
+		}
+		httpReq.ContentLength = size
+		// GetBody lets net/http retry the request idempotently without us
+		// holding the file contents in memory.
+		httpReq.GetBody = func() (io.ReadCloser, error) { return os.Open(path) }
+		setHeaders(httpReq)
+		return httpReq, nil
+
+	case *envexec.FileReader:
+		// *bytes.Reader: NewRequest already sets ContentLength + GetBody for us.
+		if br, ok := f.Reader.(*bytes.Reader); ok {
+			if _, err := br.Seek(0, io.SeekStart); err != nil {
+				return nil, err
+			}
+			httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, br)
+			if err != nil {
+				return nil, err
+			}
+			setHeaders(httpReq)
+			return httpReq, nil
+		}
+		// Unknown reader: size is not knowable without buffering. fs.Get for the
+		// local filestore never returns this shape, so this is a defensive fallback.
+		b, err := io.ReadAll(f.Reader)
+		if err != nil {
+			return nil, err
+		}
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, bytes.NewReader(b))
+		if err != nil {
+			return nil, err
+		}
+		setHeaders(httpReq)
+		return httpReq, nil
+
+	case *envexec.FileOpened:
+		st, err := f.File.Stat()
+		if err != nil {
+			return nil, err
+		}
+		size := st.Size()
+		if size == 0 {
+			httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, http.NoBody)
+			if err != nil {
+				return nil, err
+			}
+			setHeaders(httpReq)
+			return httpReq, nil
+		}
+		if _, err := f.File.Seek(0, io.SeekStart); err != nil {
+			return nil, err
+		}
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, f.File)
+		if err != nil {
+			return nil, err
+		}
+		httpReq.ContentLength = size
+		setHeaders(httpReq)
+		return httpReq, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported file type for minio upload: %T", file)
+	}
+}
+
 func (e *execServer) FileUploadToMinio(ctx context.Context, req *pb.UploadToMinioRequest) (*emptypb.Empty, error) {
 	items := req.GetItems()
 	if len(items) == 0 {
@@ -281,36 +392,28 @@ func (e *execServer) FileUploadToMinio(ctx context.Context, req *pb.UploadToMini
 			return nil, status.Errorf(codes.NotFound, "file not found: %q", fileId)
 		}
 
-		// Convert file to reader
-		reader, err := envexec.FileToReader(file)
+		httpReq, err := newMinioPutRequest(ctx, presignedURL, name, file)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to read file %q: %v", fileId, err)
 		}
 
-		// Create HTTP PUT request
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, presignedURL, reader)
-		if err != nil {
-			reader.Close()
-			return nil, status.Errorf(codes.InvalidArgument, "failed to create request for file %q: %v", fileId, err)
-		}
-
-		// Set content type if we have a filename
-		if name != "" {
-			// Try to detect content type from filename extension
-			httpReq.Header.Set("Content-Type", "application/octet-stream")
-		}
-
 		// Execute request
 		resp, err := client.Do(httpReq)
-		reader.Close()
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "failed to upload file %q: %v", fileId, err)
 		}
 
 		// Check status code (200 or 204 are typically success for PUT)
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+			snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 			resp.Body.Close()
-			return nil, status.Errorf(codes.Internal, "failed to upload file %q: status code %d", fileId, resp.StatusCode)
+			return nil, status.Errorf(
+				codes.Internal,
+				"failed to upload file %q: status code %d: %s",
+				fileId,
+				resp.StatusCode,
+				strings.TrimSpace(string(snippet)),
+			)
 		}
 		resp.Body.Close()
 	}
