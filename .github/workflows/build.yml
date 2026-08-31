@@ -1,4 +1,8 @@
 name: Build
+
+env:
+  GO_VERSION: "1.27"
+
 on:
   push:
     branches: [master]
@@ -12,7 +16,6 @@ permissions:
 jobs:
   test:
     name: Test
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,7 +23,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
       - name: Enable unprivileged user namespaces
         run: |
@@ -61,7 +64,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
       - name: Remove unsupported tags
         shell: bash
@@ -99,7 +102,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
       - name: Remove unsupported tags
         shell: bash
