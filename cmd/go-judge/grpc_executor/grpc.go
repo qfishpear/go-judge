@@ -80,6 +80,9 @@ func (e *execServer) FileGet(c context.Context, f *pb.FileID) (*pb.FileContent, 
 	}
 	defer r.Close()
 
+	// gRPC's FileGet response is unary, so the complete file must be buffered
+	// before it can be returned. Keep the configured gRPC message-size limit in
+	// mind when choosing the maximum size of files exposed through this endpoint.
 	content, err := io.ReadAll(r)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

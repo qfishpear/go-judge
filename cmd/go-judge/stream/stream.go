@@ -118,7 +118,6 @@ func Start(baseCtx context.Context, s Stream, w worker.Worker, srcPrefix []strin
 	outDone := make(chan error, 1)
 	if len(streamOut) > 0 {
 		for _, so := range streamOut {
-			so := so
 			outWG.Go(func() error {
 				return streamOutput(ctx, outCh, so)
 			})

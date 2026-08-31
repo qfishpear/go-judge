@@ -60,7 +60,6 @@ func (r *Group) Run(ctx context.Context) ([]Result, error) {
 	var g errgroup.Group
 	result := make([]Result, len(r.Cmd))
 	for i, c := range r.Cmd {
-		i, c := i, c
 		g.Go(func() error {
 			r, err := runSingle(ctx, c, fds[i], pipeToCollect[i], r.NewStoreFile)
 			result[i] = r

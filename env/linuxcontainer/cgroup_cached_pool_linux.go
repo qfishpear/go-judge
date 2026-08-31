@@ -30,7 +30,7 @@ func NewCachedCgroupPool(builder CgroupBuilder, cfsPeriod time.Duration, workerC
 		done:      make(chan struct{}),
 	}
 	p.wg.Add(workerCount)
-	for i := 0; i < workerCount; i++ {
+	for range workerCount {
 		go p.loop()
 	}
 	return p

@@ -43,7 +43,6 @@ func copyIn(m Environment, copyIn map[string]File) ([]FileError, error) {
 	}
 
 	for i, res := range results {
-		i, res := i, res
 		fileName := names[i]
 		sourceFile := copyIn[fileName]
 

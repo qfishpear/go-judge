@@ -156,7 +156,9 @@ func (w *worker) Submit(ctx context.Context, req *Request) (<-chan Response, <-c
 	return ch, started
 }
 
-// Execute will execute the request in new goroutine (bypass the parallelism limit)
+// Execute will execute the request in a new goroutine, bypassing the normal
+// parallelism limit. This is intentional for interactive sessions: they must
+// remain available even while the batch queue is saturated.
 func (w *worker) Execute(ctx context.Context, req *Request) <-chan Response {
 	ch := make(chan Response, 1)
 	w.wg.Go(func() {

@@ -424,9 +424,9 @@ const optionalSuffix = "?"
 func convertCopyOut(copyOut []string) []worker.CmdCopyOutFile {
 	rt := make([]worker.CmdCopyOutFile, 0, len(copyOut))
 	for _, n := range copyOut {
-		if strings.HasSuffix(n, optionalSuffix) {
+		if before, ok := strings.CutSuffix(n, optionalSuffix); ok {
 			rt = append(rt, worker.CmdCopyOutFile{
-				Name:     strings.TrimSuffix(n, optionalSuffix),
+				Name:     before,
 				Optional: true,
 			})
 			continue

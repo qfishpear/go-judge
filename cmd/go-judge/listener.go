@@ -90,7 +90,6 @@ func newMultiListener(ips []net.IP, port int) (lis net.Listener, err error) {
 		cancel:    cancel,
 	}
 	for _, l := range listeners {
-		l := l
 		go func() {
 			for {
 				conn, err := l.AcceptTCP()

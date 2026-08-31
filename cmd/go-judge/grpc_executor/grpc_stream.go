@@ -138,14 +138,14 @@ func convertPBStreamCopyIn(cmd *pb.Request_CmdType) map[string]model.CmdFile {
 func convertPBStreamFile(i *pb.Request_File) model.CmdFile {
 	switch i.WhichFile() {
 	case pb.Request_File_Local_case:
-		return model.CmdFile{Src: proto.String(i.GetLocal().GetSrc())}
+		return model.CmdFile{Src: new(i.GetLocal().GetSrc())}
 	case pb.Request_File_Memory_case:
 		s := byteArrayToString(i.GetMemory().GetContent())
 		return model.CmdFile{Content: &s}
 	case pb.Request_File_Cached_case:
-		return model.CmdFile{FileID: proto.String(i.GetCached().GetFileID())}
+		return model.CmdFile{FileID: new(i.GetCached().GetFileID())}
 	case pb.Request_File_Pipe_case:
-		return model.CmdFile{Name: proto.String(i.GetPipe().GetName()), Max: proto.Int64(i.GetPipe().GetMax()), Pipe: i.GetPipe().GetPipe()}
+		return model.CmdFile{Name: new(i.GetPipe().GetName()), Max: new(i.GetPipe().GetMax()), Pipe: i.GetPipe().GetPipe()}
 	case pb.Request_File_StreamIn_case:
 		return model.CmdFile{StreamIn: true}
 	case pb.Request_File_StreamOut_case:

@@ -41,7 +41,7 @@ func runWithCPUAffinity(cpuset string, fn func()) {
 
 func parseCPUSet(value string) (*unix.CPUSet, bool) {
 	var cpuSet unix.CPUSet
-	for _, segment := range strings.Split(value, ",") {
+	for segment := range strings.SplitSeq(value, ",") {
 		segment = strings.TrimSpace(segment)
 		if segment == "" {
 			continue

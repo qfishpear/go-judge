@@ -130,7 +130,6 @@ loop:
 
 	var eg errgroup.Group
 	for _, s := range stops {
-		s := s
 		eg.Go(func() error {
 			return s(ctx)
 		})
@@ -297,7 +296,7 @@ func prefork(envPool worker.EnvironmentPool, prefork int) {
 	}
 	logger.Info("Create prefork containers", zap.Int("count", prefork))
 	m := make([]envexec.Environment, 0, prefork)
-	for i := 0; i < prefork; i++ {
+	for range prefork {
 		e, err := envPool.Get()
 		if err != nil {
 			log.Fatalln("prefork environment failed ", err)

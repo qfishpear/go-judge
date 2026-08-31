@@ -39,7 +39,6 @@ func copyOutAndCollect(m Environment, c *Cmd, ptc []pipeCollector, newStoreFile 
 
 	// collect pipes
 	for _, p := range ptc {
-		p := p
 		g.Go(func() error {
 			return collectPipe(p, newStoreFile, put, addError)
 		})

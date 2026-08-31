@@ -5,11 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/criyle/go-judge/cmd/go-judge/model"
-	"github.com/criyle/go-judge/envexec"
-	"github.com/criyle/go-judge/worker"
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap/zaptest"
 	"io"
 	"maps"
 	"net/http"
@@ -17,6 +12,12 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/criyle/go-judge/cmd/go-judge/model"
+	"github.com/criyle/go-judge/envexec"
+	"github.com/criyle/go-judge/worker"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap/zaptest"
 )
 
 // mockWorker is a mock implementation of the worker.Worker interface
@@ -34,11 +35,6 @@ func (m *mockWorker) Submit(_ context.Context, req *worker.Request) (<-chan work
 		Results:   []worker.Result{m.Result},
 	}
 	return rtCh, nil
-}
-
-// ptr is a helper function to create a pointer to a value
-func ptr[T any](v T) *T {
-	return &v
 }
 
 // requestToReader converts a model.Request to an io.Reader
@@ -119,20 +115,20 @@ func TestHandleRun(t *testing.T) {
 				Env:  []string{"PATH=/usr/bin:/bin"},
 				Files: []*model.CmdFile{
 					{
-						Content: ptr(""),
+						Content: new(""),
 					}, {
-						Name: ptr("stdout"),
-						Max:  ptr(int64(10240)),
+						Name: new("stdout"),
+						Max:  new(int64(10240)),
 					}, {
-						Name: ptr("stderr"),
-						Max:  ptr(int64(10240)),
+						Name: new("stderr"),
+						Max:  new(int64(10240)),
 					}},
 				CPULimit:    10000000000,
 				MemoryLimit: 104857600,
 				ProcLimit:   50,
 				CopyIn: map[string]model.CmdFile{
 					"a.cc": {
-						Content: ptr("#include <iostream>\nusing namespace std;\nint main() {\nint a, b;\ncin >> a >> b;\ncout << a + b << endl;\n}"),
+						Content: new("#include <iostream>\nusing namespace std;\nint main() {\nint a, b;\ncin >> a >> b;\ncout << a + b << endl;\n}"),
 					},
 				},
 				CopyOut:       []string{"stdout", "stderr"},
