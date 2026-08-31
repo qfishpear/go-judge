@@ -32,15 +32,31 @@ jobs:
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
           unshare --user --map-root-user true
+          echo "--- kernel security state ---"
+          uname -a
+          grep -E '^(Seccomp|Seccomp_filters):' /proc/self/status
+          if command -v aa-status >/dev/null 2>&1; then
+            sudo aa-status || true
+          fi
       - name: Build go-judge for integration tests
         run: go build -o go-judge ./cmd/go-judge
       - name: Run unit and integration tests
         shell: bash
         run: |
           set -euo pipefail
-          ./go-judge -silent > go-judge.log 2>&1 &
+          ./go-judge > go-judge.log 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          cleanup() {
+            status=$?
+            kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
+            if [ "$status" -ne 0 ]; then
+              echo "--- go-judge startup/runtime log ---"
+              cat go-judge.log
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
           curl --fail --retry 30 --retry-delay 1 http://localhost:5050/version
           go test ./...
           go test -tags integration -v -count=1 ./integration_test
