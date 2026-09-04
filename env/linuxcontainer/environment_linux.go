@@ -65,7 +65,10 @@ func (c *environ) Execve(ctx context.Context, param envexec.ExecveParam) (envexe
 		if err := c.setCgroupLimit(cg, limit); err != nil {
 			return nil, err
 		}
-		if c.cgFd {
+		// clone3(CLONE_INTO_CGROUP) does not apply cpuset.cpus to the new
+		// task on kernels before 42a11bf5c543 (e.g. Linux 5.15). Writing the
+		// pid to cgroup.procs does. Keep clone3 only when no CPU set is set.
+		if c.cgFd && limit.CPUSet == "" {
 			f, err := cg.Open()
 			if err != nil {
 				return nil, fmt.Errorf("execve: failed to get cgroup fd: %w", err)
