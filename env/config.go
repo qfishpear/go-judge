@@ -8,6 +8,7 @@ type Config struct {
 	TmpFsParam         string
 	NetShare           bool
 	MountConf          string
+	CopyInStagingDir   string
 	SeccompConf        string
 	NoSeccomp          bool
 	CgroupPrefix       string

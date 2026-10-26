@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/criyle/go-judge/envexec"
+	"github.com/criyle/go-judge/filestore"
 )
 
 type failingFileStore struct{}
@@ -13,9 +14,12 @@ type failingFileStore struct{}
 func (failingFileStore) Add(name, path string) (string, error) { return "", errors.New("add failed") }
 func (failingFileStore) Remove(string) bool                    { return false }
 func (failingFileStore) Get(string) (string, envexec.File)     { return "", nil }
-func (failingFileStore) List() map[string]string               { return nil }
-func (failingFileStore) New() (*os.File, error)                { return nil, errors.New("not implemented") }
-func (failingFileStore) Close() error                          { return nil }
+func (failingFileStore) PrepareCopyIn(string, string) (filestore.CopyInResult, error) {
+	return filestore.CopyInResult{}, errors.New("not implemented")
+}
+func (failingFileStore) List() map[string]string { return nil }
+func (failingFileStore) New() (*os.File, error)  { return nil, errors.New("not implemented") }
+func (failingFileStore) Close() error            { return nil }
 
 func TestConvertResultClosesCachedFileOnAddFailure(t *testing.T) {
 	tmp, err := os.CreateTemp(t.TempDir(), "cached-out-*")

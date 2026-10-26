@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -25,6 +27,7 @@ type EnvironmentPool interface {
 type Config struct {
 	FileStore             filestore.FileStore
 	EnvironmentPool       EnvironmentPool
+	CopyInStagingDir      string
 	Parallelism           int
 	WorkDir               string
 	TimeLimitTickInterval time.Duration
@@ -54,10 +57,11 @@ type Stat struct {
 
 // worker defines executor worker
 type worker struct {
-	fs          filestore.FileStore
-	envPool     EnvironmentPool
-	parallelism int
-	workDir     string
+	fs               filestore.FileStore
+	envPool          EnvironmentPool
+	copyInStagingDir string
+	parallelism      int
+	workDir          string
 
 	timeLimitTickInterval time.Duration
 	extraMemoryLimit      envexec.Size
@@ -90,6 +94,7 @@ func New(conf Config) Worker {
 	return &worker{
 		fs:                    conf.FileStore,
 		envPool:               conf.EnvironmentPool,
+		copyInStagingDir:      conf.CopyInStagingDir,
 		parallelism:           conf.Parallelism,
 		workDir:               conf.WorkDir,
 		timeLimitTickInterval: conf.TimeLimitTickInterval,
@@ -258,7 +263,10 @@ func (w *worker) validateShmMapping(shms []ShmMap) error {
 }
 
 func (w *worker) workDoSingle(ctx context.Context, rc Cmd, cpuset string) (rt Response) {
-	c, err := w.prepareCmd(rc, make(map[string]bool), cpuset)
+	copyIn := newCopyInSession(w.copyInStagingDir)
+	defer copyIn.close()
+
+	c, err := w.prepareCmd(rc, make(map[string]bool), cpuset, copyIn)
 	if err != nil {
 		rt.Error = err
 		return
@@ -289,6 +297,9 @@ func (w *worker) workDoSingle(ctx context.Context, rc Cmd, cpuset string) (rt Re
 }
 
 func (w *worker) workDoGroup(ctx context.Context, rc []Cmd, pm []PipeMap, sm []ShmMap, cpuset string) (rt Response) {
+	copyIn := newCopyInSession(w.copyInStagingDir)
+	defer copyIn.close()
+
 	var rts []Result
 	cs := make([]*envexec.Cmd, 0, len(rc))
 	pipes := make([]PipeMap, 0, len(pm))
@@ -298,7 +309,7 @@ func (w *worker) workDoGroup(ctx context.Context, rc []Cmd, pm []PipeMap, sm []S
 	}
 	pipeFileNames := preparePipeNames(pm, len(rc))
 	for i, cc := range rc {
-		c, err := w.prepareCmd(cc, pipeFileNames[i], cpuset)
+		c, err := w.prepareCmd(cc, pipeFileNames[i], cpuset, copyIn)
 		if err != nil {
 			rt.Error = err
 			return
@@ -397,12 +408,12 @@ func (w *worker) convertResult(result envexec.Result, cmd Cmd) (res Result) {
 	return res
 }
 
-func (w *worker) prepareCmd(rc Cmd, pipeFileName map[string]bool, cpuset string) (*envexec.Cmd, error) {
+func (w *worker) prepareCmd(rc Cmd, pipeFileName map[string]bool, cpuset string, copyInSession *copyInSession) (*envexec.Cmd, error) {
 	files, err := w.prepareCmdFiles(rc.Files, pipeFileName)
 	if err != nil {
 		return nil, err
 	}
-	copyIn, err := w.prepareCopyIn(rc.CopyIn)
+	copyIn, symlinks, err := w.prepareCopyIn(rc.CopyIn, rc.Symlinks, copyInSession)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +474,7 @@ func (w *worker) prepareCmd(rc Cmd, pipeFileName map[string]bool, cpuset string)
 		DataSegmentLimit:  rc.DataSegmentLimit,
 		AddressSpaceLimit: rc.AddressSpaceLimit,
 		CopyIn:            copyIn,
-		SymLinks:          rc.Symlinks,
+		SymLinks:          symlinks,
 		CopyOut:           copyOut,
 		CopyOutMax:        copyOutMax,
 		CopyOutTruncate:   rc.CopyOutTruncate,
@@ -471,19 +482,50 @@ func (w *worker) prepareCmd(rc Cmd, pipeFileName map[string]bool, cpuset string)
 	}, nil
 }
 
-func (w *worker) prepareCopyIn(cf map[string]CmdFile) (map[string]envexec.File, error) {
+func (w *worker) prepareCopyIn(
+	cf map[string]CmdFile,
+	requestSymlinks map[string]string,
+	session *copyInSession,
+) (map[string]envexec.File, map[string]string, error) {
 	rt := make(map[string]envexec.File)
+	symlinks := make(map[string]string, len(requestSymlinks))
+	for name, target := range requestSymlinks {
+		symlinks[name] = target
+	}
 	for name, f := range cf {
 		if f == nil {
-			return nil, fmt.Errorf("nil type cannot be used for copyIn %s", name)
+			return nil, nil, fmt.Errorf("nil type cannot be used for copyIn %s", name)
+		}
+		if cached, ok := f.(*CachedFile); ok {
+			copyInPath := path.Clean(name)
+			conflictsWithRequestedSymlink := false
+			for requestedName := range requestSymlinks {
+				requestedPath := path.Clean(requestedName)
+				if copyInPath == requestedPath ||
+					strings.HasPrefix(copyInPath, requestedPath+"/") ||
+					strings.HasPrefix(requestedPath, copyInPath+"/") {
+					conflictsWithRequestedSymlink = true
+					break
+				}
+			}
+			file, target, err := session.prepare(w.fs, cached, !cached.ForceCopy && !conflictsWithRequestedSymlink)
+			if err != nil {
+				return nil, nil, err
+			}
+			if target != "" {
+				symlinks[name] = target
+			} else {
+				rt[name] = file
+			}
+			continue
 		}
 		pcf, err := f.EnvFile(w.fs)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		rt[name] = pcf
 	}
-	return rt, nil
+	return rt, symlinks, nil
 }
 
 func (w *worker) prepareCmdFiles(files []CmdFile, pipeFileName map[string]bool) ([]envexec.File, error) {

@@ -155,7 +155,10 @@ func convertPBStreamFile(i *pb.Request_File) model.CmdFile {
 		s := byteArrayToString(i.GetMemory().GetContent())
 		return model.CmdFile{Content: &s}
 	case pb.Request_File_Cached_case:
-		return model.CmdFile{FileID: new(i.GetCached().GetFileID())}
+		return model.CmdFile{
+			FileID:    new(i.GetCached().GetFileID()),
+			ForceCopy: i.GetCached().GetForceCopy(),
+		}
 	case pb.Request_File_Pipe_case:
 		return model.CmdFile{Name: new(i.GetPipe().GetName()), Max: new(i.GetPipe().GetMax()), Pipe: i.GetPipe().GetPipe()}
 	case pb.Request_File_StreamIn_case:

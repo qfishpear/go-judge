@@ -234,7 +234,10 @@ func convertPBFile(i model.CmdFile) *pb.Request_File {
 		s := strToBytes(*i.Content)
 		return pb.Request_File_builder{Memory: pb.Request_MemoryFile_builder{Content: s}.Build()}.Build()
 	case i.FileID != nil:
-		return pb.Request_File_builder{Cached: pb.Request_CachedFile_builder{FileID: *i.FileID}.Build()}.Build()
+		return pb.Request_File_builder{Cached: pb.Request_CachedFile_builder{
+			FileID:    *i.FileID,
+			ForceCopy: i.ForceCopy,
+		}.Build()}.Build()
 	case i.Name != nil && i.Max != nil:
 		return pb.Request_File_builder{Pipe: pb.Request_PipeCollector_builder{Name: *i.Name, Max: *i.Max, Pipe: i.Pipe}.Build()}.Build()
 	case i.StreamIn:

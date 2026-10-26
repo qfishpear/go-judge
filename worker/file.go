@@ -59,7 +59,8 @@ func (f *MemoryFile) String() string {
 
 // CachedFile defines file cached in the file store
 type CachedFile struct {
-	FileID string
+	FileID    string
+	ForceCopy bool
 }
 
 // EnvFile prepares file for envexec file

@@ -2,7 +2,12 @@
 
 package env
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+
+	"go.uber.org/zap"
+)
 
 func TestKernelVersionAtLeast(t *testing.T) {
 	tests := []struct {
@@ -26,4 +31,26 @@ func TestKernelVersionAtLeast(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPrepareMountAndPathsAddsReadOnlyCopyInStaging(t *testing.T) {
+	staging := t.TempDir()
+	_, builder, _, _, err := prepareMountAndPaths(Config{
+		MountConf:        filepath.Join(t.TempDir(), "missing.yaml"),
+		CopyInStagingDir: staging,
+	}, zap.NewNop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	appendCopyInMount(builder, staging)
+
+	for _, mount := range builder.Mounts {
+		if mount.Source == staging && mount.Target == "copyin" {
+			if !mount.IsReadOnly() {
+				t.Fatal("copy-in staging mount is writable")
+			}
+			return
+		}
+	}
+	t.Fatal("copy-in staging mount is missing")
 }

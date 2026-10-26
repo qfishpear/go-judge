@@ -14,7 +14,10 @@ message Request {
 
   message MemoryFile { bytes content = 1; }
 
-  message CachedFile { string fileID = 1; }
+  message CachedFile {
+    string fileID = 1;
+    bool forceCopy = 2;
+  }
 
   message PipeCollector {
     string name = 1;

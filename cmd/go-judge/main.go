@@ -70,10 +70,11 @@ func main() {
 
 	// Init environment pool
 	fs, fsCleanUp := newFileStore(conf)
-	b, builderParam := newEnvBuilder(conf)
+	copyInStagingDir, copyInStagingCleanUp := newCopyInStaging(conf.Dir)
+	b, builderParam := newEnvBuilder(conf, copyInStagingDir)
 	envPool := newEnvPool(b, conf.EnableMetrics)
 	prefork(envPool, conf.PreFork)
-	work := newWorker(conf, envPool, fs)
+	work := newWorker(conf, envPool, fs, copyInStagingDir)
 	work.Start()
 	logger.Info("Worker stated ",
 		zap.Int("parallelism", conf.Parallelism),
@@ -140,7 +141,13 @@ loop:
 	}
 
 	go func() {
-		logger.Info("Shutdown Finished", zap.Error(eg.Wait()))
+		err := eg.Wait()
+		// Staging links must outlive every worker request. Removing them in
+		// parallel with worker shutdown breaks active /w symlinks.
+		if copyInStagingCleanUp != nil {
+			err = errors.Join(err, copyInStagingCleanUp())
+		}
+		logger.Info("Shutdown Finished", zap.Error(err))
 		cancel()
 	}()
 	<-ctx.Done()
@@ -577,10 +584,57 @@ func newFileStore(conf *config.Config) (filestore.FileStore, func() error) {
 	}
 }
 
-func newEnvBuilder(conf *config.Config) (pool.EnvBuilder, map[string]any) {
+func newCopyInStaging(fileStoreDir string) (string, func() error) {
+	if runtime.GOOS != "linux" {
+		return "", nil
+	}
+
+	stagingDir := fileStoreDir + ".copyin-links"
+	if err := os.RemoveAll(stagingDir); err != nil {
+		logger.Warn("failed to clean cached copy-in staging directory; using ordinary copy-in",
+			zap.String("path", stagingDir), zap.Error(err))
+		return "", nil
+	}
+	if err := os.Mkdir(stagingDir, 0o711); err != nil {
+		logger.Warn("failed to create cached copy-in staging directory; using ordinary copy-in",
+			zap.String("path", stagingDir), zap.Error(err))
+		return "", nil
+	}
+
+	source, err := os.CreateTemp(fileStoreDir, ".copyin-link-probe-")
+	if err != nil {
+		_ = os.RemoveAll(stagingDir)
+		logger.Warn("failed to create cached copy-in hard-link probe; using ordinary copy-in", zap.Error(err))
+		return "", nil
+	}
+	sourcePath := source.Name()
+	_ = source.Close()
+	defer os.Remove(sourcePath)
+
+	probeTarget := filepath.Join(stagingDir, ".probe")
+	if err := os.Link(sourcePath, probeTarget); err != nil {
+		_ = os.RemoveAll(stagingDir)
+		logger.Warn("file store and cached copy-in staging do not support hard links; using ordinary copy-in",
+			zap.String("fileStore", fileStoreDir),
+			zap.String("staging", stagingDir),
+			zap.Error(err))
+		return "", nil
+	}
+	_ = os.Remove(probeTarget)
+
+	logger.Info("cached copy-in hard links enabled",
+		zap.String("fileStore", fileStoreDir),
+		zap.String("staging", stagingDir))
+	return stagingDir, func() error {
+		return os.RemoveAll(stagingDir)
+	}
+}
+
+func newEnvBuilder(conf *config.Config, copyInStagingDir string) (pool.EnvBuilder, map[string]any) {
 	b, param, err := env.NewBuilder(env.Config{
 		ContainerInitPath:  conf.ContainerInitPath,
 		MountConf:          conf.MountConf,
+		CopyInStagingDir:   copyInStagingDir,
 		TmpFsParam:         conf.TmpFsParam,
 		NetShare:           conf.NetShare,
 		CgroupPrefix:       conf.CgroupPrefix,
@@ -608,10 +662,11 @@ func newEnvPool(b pool.EnvBuilder, enableMetrics bool) worker.EnvironmentPool {
 	return p
 }
 
-func newWorker(conf *config.Config, envPool worker.EnvironmentPool, fs filestore.FileStore) worker.Worker {
+func newWorker(conf *config.Config, envPool worker.EnvironmentPool, fs filestore.FileStore, copyInStagingDir string) worker.Worker {
 	w := worker.New(worker.Config{
 		FileStore:             fs,
 		EnvironmentPool:       envPool,
+		CopyInStagingDir:      copyInStagingDir,
 		Parallelism:           conf.Parallelism,
 		WorkDir:               conf.Dir,
 		TimeLimitTickInterval: conf.TimeLimitCheckerInterval,

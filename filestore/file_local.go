@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/criyle/go-judge/envexec"
 )
@@ -53,6 +54,52 @@ func (s *fileLocalStore) Get(id string) (string, envexec.File) {
 		name = id
 	}
 	return name, envexec.NewFileInput(p)
+}
+
+func (s *fileLocalStore) PrepareCopyIn(id, linkPath string) (CopyInResult, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if !validID(id) {
+		return CopyInResult{}, fmt.Errorf("%w: %q", ErrFileNotFound, id)
+	}
+	p := filepath.Join(s.dir, id)
+	fi, err := os.Stat(p)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return CopyInResult{}, fmt.Errorf("%w: %q", ErrFileNotFound, id)
+		}
+		return CopyInResult{}, err
+	}
+
+	var fallbackReason CopyInFallbackReason
+	if linkPath != "" {
+		if !fi.Mode().IsRegular() {
+			fallbackReason = CopyInFallbackNotRegular
+		} else if err := os.Link(p, linkPath); err == nil {
+			return CopyInResult{Linked: true}, nil
+		} else {
+			switch {
+			case errors.Is(err, syscall.EXDEV):
+				fallbackReason = CopyInFallbackCrossDevice
+			case errors.Is(err, os.ErrPermission):
+				fallbackReason = CopyInFallbackPermission
+			case errors.Is(err, syscall.ENOSYS), errors.Is(err, syscall.EOPNOTSUPP):
+				fallbackReason = CopyInFallbackUnsupported
+			default:
+				fallbackReason = CopyInFallbackOther
+			}
+		}
+	}
+
+	f, err := os.Open(p)
+	if err != nil {
+		return CopyInResult{}, err
+	}
+	return CopyInResult{
+		File:           envexec.NewFileOpened(f),
+		FallbackReason: fallbackReason,
+	}, nil
 }
 
 func (s *fileLocalStore) Remove(id string) bool {

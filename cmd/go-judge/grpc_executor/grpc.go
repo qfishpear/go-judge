@@ -601,7 +601,10 @@ func convertPBFile(c *pb.Request_File, srcPrefix []string) (worker.CmdFile, erro
 	case pb.Request_File_Memory_case:
 		return &worker.MemoryFile{Content: c.GetMemory().GetContent()}, nil
 	case pb.Request_File_Cached_case:
-		return &worker.CachedFile{FileID: c.GetCached().GetFileID()}, nil
+		return &worker.CachedFile{
+			FileID:    c.GetCached().GetFileID(),
+			ForceCopy: c.GetCached().GetForceCopy(),
+		}, nil
 	case pb.Request_File_Pipe_case:
 		return &worker.Collector{Name: c.GetPipe().GetName(), Max: envexec.Size(c.GetPipe().GetMax()), Pipe: c.GetPipe().GetPipe()}, nil
 	}

@@ -33,6 +33,7 @@ func NewBuilder(c Config, logger *zap.Logger) (pool.EnvBuilder, map[string]any, 
 	if err != nil {
 		return nil, nil, err
 	}
+	appendCopyInMount(mountBuilder, c.CopyInStagingDir)
 	m := mountBuilder.FilterNotExist().Mounts
 
 	seccomp, err := prepareSeccomp(c, logger)
@@ -99,6 +100,12 @@ func NewBuilder(c Config, logger *zap.Logger) (pool.EnvBuilder, map[string]any, 
 		CPURate:    c.EnableCPURate,
 		Seccomp:    nil,
 	}), conf, nil
+}
+
+func appendCopyInMount(builder *mount.Builder, stagingDir string) {
+	if stagingDir != "" {
+		builder.WithBind(stagingDir, "copyin", true)
+	}
 }
 
 func prepareMountAndPaths(c Config, logger *zap.Logger) (*Mounts, *mount.Builder, []container.SymbolicLink, []string, error) {

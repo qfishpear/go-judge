@@ -241,6 +241,18 @@ func TestConvertCmdFile_Collector(t *testing.T) {
 	}
 }
 
+func TestConvertCmdFile_CachedForceCopy(t *testing.T) {
+	id := "ABCDEFGH"
+	cf, err := convertCmdFile(&CmdFile{FileID: &id, ForceCopy: true}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := cf.(*worker.CachedFile)
+	if !ok || got.FileID != id || !got.ForceCopy {
+		t.Fatalf("unexpected cached file: %#v", cf)
+	}
+}
+
 func TestConvertCmdFile_Invalid(t *testing.T) {
 	f := &CmdFile{}
 	_, err := convertCmdFile(f, nil)

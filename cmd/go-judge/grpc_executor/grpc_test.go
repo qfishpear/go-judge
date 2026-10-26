@@ -6,6 +6,7 @@ import (
 	"github.com/criyle/go-judge/cmd/go-judge/model"
 	"github.com/criyle/go-judge/envexec"
 	"github.com/criyle/go-judge/pb"
+	"github.com/criyle/go-judge/worker"
 )
 
 func TestConvertPBFileErrorType(t *testing.T) {
@@ -83,5 +84,27 @@ func TestConvertPBStreamRequestShmMapping(t *testing.T) {
 	}
 	if workerReq.Cmd[0].CopyOutTruncate {
 		t.Fatal("worker copyOutTruncate must stay false")
+	}
+}
+
+func TestConvertPBCachedFilePreservesForceCopy(t *testing.T) {
+	file := pb.Request_File_builder{
+		Cached: pb.Request_CachedFile_builder{
+			FileID:    "ABCDEFGH",
+			ForceCopy: true,
+		}.Build(),
+	}.Build()
+
+	unary, err := convertPBFile(file, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := unary.(*worker.CachedFile); !ok || got.FileID != "ABCDEFGH" || !got.ForceCopy {
+		t.Fatalf("unexpected unary cached file: %#v", unary)
+	}
+
+	stream := convertPBStreamFile(file)
+	if stream.FileID == nil || *stream.FileID != "ABCDEFGH" || !stream.ForceCopy {
+		t.Fatalf("unexpected stream cached file: %#v", stream)
 	}
 }

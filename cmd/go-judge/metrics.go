@@ -76,6 +76,12 @@ var (
 		Help:      "Total size of current files in the file store",
 	})
 
+	copyInLinkTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Name:      "copyin_link_total",
+		Help:      "Number of cached copy-in hard-link attempts",
+	}, []string{"result", "reason"})
+
 	envCreated = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: environmentSubsystem,
@@ -106,6 +112,7 @@ func init() {
 	prometheus.MustRegister(execTimeHist)
 	prometheus.MustRegister(execMemHist)
 	prometheus.MustRegister(fsSizeHist, fsCurrentTotalCount, fsCurrentTotalSize)
+	prometheus.MustRegister(copyInLinkTotal)
 	prometheus.MustRegister(envCreated, envInUse)
 }
 
@@ -202,6 +209,19 @@ func (m *metricsFileStore) Remove(id string) bool {
 	fsCurrentTotalCount.Dec()
 
 	return success
+}
+
+func (m *metricsFileStore) PrepareCopyIn(id, linkPath string) (filestore.CopyInResult, error) {
+	result, err := m.FileStore.PrepareCopyIn(id, linkPath)
+	if linkPath == "" || err != nil {
+		return result, err
+	}
+	if result.Linked {
+		copyInLinkTotal.WithLabelValues("success", "").Inc()
+	} else {
+		copyInLinkTotal.WithLabelValues("fallback", string(result.FallbackReason)).Inc()
+	}
+	return result, err
 }
 
 func (m *metricsFileStore) Close() error {

@@ -144,6 +144,24 @@ func (t *Timeout) Get(id string) (string, envexec.File) {
 	return name, file
 }
 
+func (t *Timeout) PrepareCopyIn(id, linkPath string) (CopyInResult, error) {
+	result, err := t.FileStore.PrepareCopyIn(id, linkPath)
+	if err != nil {
+		return result, err
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	index, ok := t.idToIndex[id]
+	if !ok {
+		return result, nil
+	}
+	t.files[index].time = time.Now()
+	heap.Fix(t, index)
+	return result, nil
+}
+
 func (t *Timeout) New() (*os.File, error) {
 	return t.FileStore.New()
 }

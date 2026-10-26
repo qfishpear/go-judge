@@ -29,6 +29,7 @@ type CmdFile struct {
 	StreamIn  bool    `json:"streamIn"`
 	StreamOut bool    `json:"streamOut"`
 	Pipe      bool    `json:"pipe"`
+	ForceCopy bool    `json:"forceCopy"`
 }
 
 // Cmd defines command and limits to start a program using in envexec
@@ -380,7 +381,7 @@ func convertCmdFile(f *CmdFile, srcPrefix []string) (worker.CmdFile, error) {
 	case f.Content != nil:
 		return &worker.MemoryFile{Content: strToBytes(*f.Content)}, nil
 	case f.FileID != nil:
-		return &worker.CachedFile{FileID: *f.FileID}, nil
+		return &worker.CachedFile{FileID: *f.FileID, ForceCopy: f.ForceCopy}, nil
 	case f.Max != nil && f.Name != nil:
 		return &worker.Collector{Name: *f.Name, Max: envexec.Size(*f.Max), Pipe: f.Pipe}, nil
 	default:
