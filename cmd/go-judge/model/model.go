@@ -77,11 +77,19 @@ type PipeMap struct {
 	DisableZeroCopy bool       `json:"disableZeroCopy"`
 }
 
+// ShmMap shares one memfd-backed region across commands. Each target reserves
+// an empty fd slot; the cmds mmap that fd.
+type ShmMap struct {
+	Size    uint64       `json:"size"`
+	Targets []CmdFdIndex `json:"targets"`
+}
+
 // Request defines single worker request
 type Request struct {
 	RequestID   string    `json:"requestId"`
 	Cmd         []Cmd     `json:"cmd"`
 	PipeMapping []PipeMap `json:"pipeMapping"`
+	ShmMapping  []ShmMap  `json:"shmMapping"`
 }
 
 // Status offers JSON marshal for envexec.Status
@@ -248,6 +256,19 @@ func ConvertRequest(r *Request, srcPrefix []string) (*worker.Request, error) {
 	}
 	for _, p := range r.PipeMapping {
 		req.PipeMapping = append(req.PipeMapping, convertPipe(p))
+	}
+	if len(r.ShmMapping) > 0 {
+		req.ShmMapping = make([]worker.ShmMap, 0, len(r.ShmMapping))
+		for _, s := range r.ShmMapping {
+			targets := make([]worker.CmdFdIndex, len(s.Targets))
+			for i, t := range s.Targets {
+				targets[i] = worker.CmdFdIndex{Index: t.Index, Fd: t.Fd}
+			}
+			req.ShmMapping = append(req.ShmMapping, worker.ShmMap{
+				Size:    worker.Size(s.Size),
+				Targets: targets,
+			})
+		}
 	}
 	return req, nil
 }

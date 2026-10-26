@@ -89,6 +89,8 @@ func convertPBStreamRequest(req *pb.Request) *model.Request {
 			CopyOutCached:     convertStreamCopyOut(cmd.GetCopyOutCached()),
 			CopyOutMax:        cmd.GetCopyOutMax(),
 			CopyOutDir:        cmd.GetCopyOutDir(),
+			// CopyOutTruncate stays unset. An oversized copyOut fails instead of
+			// keeping a truncated file.
 		})
 	}
 	for _, p := range req.GetPipeMapping() {
@@ -99,6 +101,16 @@ func convertPBStreamRequest(req *pb.Request) *model.Request {
 			Name:            p.GetName(),
 			Proxy:           p.GetProxy(),
 			DisableZeroCopy: p.GetDisableZeroCopy(),
+		})
+	}
+	for _, s := range req.GetShmMapping() {
+		targets := make([]model.CmdFdIndex, len(s.GetTargets()))
+		for i, t := range s.GetTargets() {
+			targets[i] = convertPBStreamCmdFdIndex(t)
+		}
+		ret.ShmMapping = append(ret.ShmMapping, model.ShmMap{
+			Size:    s.GetSize(),
+			Targets: targets,
 		})
 	}
 	return ret
