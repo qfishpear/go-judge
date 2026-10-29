@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
 )
 
 type fileAddStreamStub struct {
@@ -141,7 +142,11 @@ func TestFileStreamGRPCRoundTrip(t *testing.T) {
 		if i == 0 {
 			name = "artifact.bin"
 		}
-		if err := upload.Send(pb.FileContent_builder{Name: name, Content: chunk}.Build()); err != nil {
+		b := pb.FileContent_builder{Content: chunk}
+		if name != "" {
+			b.Name = proto.String(name)
+		}
+		if err := upload.Send(b.Build()); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -221,8 +226,8 @@ func TestFileAddStreamRejectsEmptyStream(t *testing.T) {
 func TestFileAddStreamRejectsNameChange(t *testing.T) {
 	server, _, dir := newFileStreamTestServer(t)
 	stream := &fileAddStreamStub{chunks: []*pb.FileContent{
-		pb.FileContent_builder{Name: "a.bin", Content: []byte("a")}.Build(),
-		pb.FileContent_builder{Name: "b.bin", Content: []byte("b")}.Build(),
+		pb.FileContent_builder{Name: proto.String("a.bin"), Content: []byte("a")}.Build(),
+		pb.FileContent_builder{Name: proto.String("b.bin"), Content: []byte("b")}.Build(),
 	}}
 
 	err := server.FileAddStream(stream)
@@ -236,7 +241,7 @@ func TestFileAddStreamCleansUpOnReceiveError(t *testing.T) {
 	server, _, dir := newFileStreamTestServer(t)
 	stream := &fileAddStreamStub{
 		chunks: []*pb.FileContent{
-			pb.FileContent_builder{Name: "artifact.bin", Content: []byte("partial")}.Build(),
+			pb.FileContent_builder{Name: proto.String("artifact.bin"), Content: []byte("partial")}.Build(),
 		},
 		recvErr: context.Canceled,
 	}
@@ -253,7 +258,7 @@ func TestFileAddStreamRollsBackOnSendFailure(t *testing.T) {
 	sendErr := errors.New("send failed")
 	stream := &fileAddStreamStub{
 		chunks: []*pb.FileContent{
-			pb.FileContent_builder{Name: "artifact.bin", Content: []byte("complete")}.Build(),
+			pb.FileContent_builder{Name: proto.String("artifact.bin"), Content: []byte("complete")}.Build(),
 		},
 		sendErr: sendErr,
 	}

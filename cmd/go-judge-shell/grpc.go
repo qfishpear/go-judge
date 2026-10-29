@@ -126,14 +126,21 @@ func convertFiles(buf map[string][]byte) map[string]string {
 }
 
 func convertPBRequest(req *model.Request) *pb.StreamRequest {
-	ret := pb.StreamRequest_builder{
-		ExecRequest: pb.Request_builder{
-			RequestID:   req.RequestID,
-			Cmd:         convertPBCmd(req.Cmd),
-			PipeMapping: convertPBPipeMapping(req.PipeMapping),
-		}.Build(),
-	}.Build()
-	return ret
+	b := pb.Request_builder{
+		Cmd:         convertPBCmd(req.Cmd),
+		PipeMapping: convertPBPipeMapping(req.PipeMapping),
+	}
+	b.RequestID = optional(req.RequestID)
+	return pb.StreamRequest_builder{ExecRequest: b.Build()}.Build()
+}
+
+// optional leaves zero values unset so the executor applies its defaults.
+func optional[T comparable](v T) *T {
+	var zero T
+	if v == zero {
+		return nil
+	}
+	return &v
 }
 
 func convertPBFileError(fe []*pb.Response_FileError) []model.FileError {
@@ -154,22 +161,23 @@ func convertPBCmd(cmd []model.Cmd) []*pb.Request_CmdType {
 		ret = append(ret, pb.Request_CmdType_builder{
 			Args:              c.Args,
 			Env:               c.Env,
-			Tty:               c.TTY,
+			Tty:               optional(c.TTY),
 			Files:             convertPBFiles(c.Files),
-			CpuTimeLimit:      c.CPULimit,
-			ClockTimeLimit:    c.ClockLimit,
-			MemoryLimit:       c.MemoryLimit,
-			StackLimit:        c.StackLimit,
-			ProcLimit:         c.ProcLimit,
-			CpuRateLimit:      c.CPURateLimit,
-			CpuSetLimit:       c.CPUSetLimit,
-			DataSegmentLimit:  c.DataSegmentLimit,
-			AddressSpaceLimit: c.AddressSpaceLimit,
+			CpuTimeLimit:      optional(c.CPULimit),
+			ClockTimeLimit:    optional(c.ClockLimit),
+			MemoryLimit:       optional(c.MemoryLimit),
+			StackLimit:        optional(c.StackLimit),
+			ProcLimit:         optional(c.ProcLimit),
+			CpuRateLimit:      optional(c.CPURateLimit),
+			CpuSetLimit:       optional(c.CPUSetLimit),
+			DataSegmentLimit:  optional(c.DataSegmentLimit),
+			AddressSpaceLimit: optional(c.AddressSpaceLimit),
 			CopyIn:            convertPBCopyIn(c.CopyIn),
 			CopyOut:           convertPBCopyOut(c.CopyOut),
 			CopyOutCached:     convertPBCopyOut(c.CopyOutCached),
-			CopyOutMax:        c.CopyOutMax,
-			CopyOutDir:        c.CopyOutDir,
+			CopyOutMax:        optional(c.CopyOutMax),
+			CopyOutTruncate:   optional(c.CopyOutTruncate),
+			OutputLimit:       optional(c.OutputLimit),
 			Symlinks:          convertSymlink(c.CopyIn),
 		}.Build())
 	}
@@ -190,14 +198,14 @@ func convertPBCopyIn(copyIn map[string]model.CmdFile) map[string]*pb.Request_Fil
 func convertPBCopyOut(copyOut []string) []*pb.Request_CmdCopyOutFile {
 	rt := make([]*pb.Request_CmdCopyOutFile, 0, len(copyOut))
 	for _, n := range copyOut {
-		optional := false
+		isOptional := false
 		if strings.HasSuffix(n, "?") {
-			optional = true
+			isOptional = true
 			n = strings.TrimSuffix(n, "?")
 		}
 		rt = append(rt, pb.Request_CmdCopyOutFile_builder{
 			Name:     n,
-			Optional: optional,
+			Optional: optional(isOptional),
 		}.Build())
 	}
 	return rt
@@ -236,10 +244,10 @@ func convertPBFile(i model.CmdFile) *pb.Request_File {
 	case i.FileID != nil:
 		return pb.Request_File_builder{Cached: pb.Request_CachedFile_builder{
 			FileID:    *i.FileID,
-			ForceCopy: i.ForceCopy,
+			ForceCopy: optional(i.ForceCopy),
 		}.Build()}.Build()
 	case i.Name != nil && i.Max != nil:
-		return pb.Request_File_builder{Pipe: pb.Request_PipeCollector_builder{Name: *i.Name, Max: *i.Max, Pipe: i.Pipe}.Build()}.Build()
+		return pb.Request_File_builder{Pipe: pb.Request_PipeCollector_builder{Name: *i.Name, Max: *i.Max, Pipe: optional(i.Pipe)}.Build()}.Build()
 	case i.StreamIn:
 		return pb.Request_File_builder{StreamIn: &emptypb.Empty{}}.Build()
 	case i.StreamOut:
@@ -254,9 +262,9 @@ func convertPBPipeMapping(pm []model.PipeMap) []*pb.Request_PipeMap {
 		ret = append(ret, pb.Request_PipeMap_builder{
 			In:    convertPBCmdFdIndex(p.In),
 			Out:   convertPBCmdFdIndex(p.Out),
-			Name:  p.Name,
-			Proxy: p.Proxy,
-			Max:   uint64(p.Max),
+			Name:  optional(p.Name),
+			Proxy: optional(p.Proxy),
+			Max:   optional(uint64(p.Max)),
 		}.Build())
 	}
 	return ret

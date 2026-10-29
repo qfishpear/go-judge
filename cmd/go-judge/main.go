@@ -263,7 +263,7 @@ func initGRPCServer(conf *config.Config, work worker.Worker, fs filestore.FileSt
 			return nil, nil
 		}
 		// Init gRPC server
-		esServer := grpcexecutor.New(work, fs, conf.SrcPrefix, logger)
+		esServer := grpcexecutor.New(work, fs, conf.SrcPrefix, logger, conf.MinioTimeout)
 		grpcServer := newGRPCServer(conf, esServer)
 
 		return func() {
@@ -355,7 +355,7 @@ func initHTTPMux(conf *config.Config, work worker.Worker, fs filestore.FileStore
 	fileHandle.Register(r)
 
 	// WebSocket Handle
-	wsHandle := wsexecutor.New(work, conf.SrcPrefix, logger)
+	wsHandle := wsexecutor.New(work, conf.SrcPrefix, logger, func(id string) { fs.Remove(id) })
 	wsHandle.Register(r)
 
 	return r
@@ -539,12 +539,75 @@ func grpcTokenAuth(token string) func(context.Context) (context.Context, error) 
 	}
 }
 
+// cleanExplicitFileStoreDir deletes entries inside dir and keeps dir itself.
+// dir must be absolute. After symlink resolution the path must contain at
+// least three elements (/dev/shm/go-judge is allowed; /dev/shm is not).
+func cleanExplicitFileStoreDir(dir string) error {
+	cleaned := filepath.Clean(dir)
+	if cleaned == "" || !filepath.IsAbs(cleaned) {
+		return fmt.Errorf("file store dir must be absolute, got %q", dir)
+	}
+	resolved, err := resolveStorePath(cleaned)
+	if err != nil {
+		return err
+	}
+	if storePathDepth(resolved) < 3 {
+		return fmt.Errorf("refusing to clean shallow file store dir %q", resolved)
+	}
+	if err := os.MkdirAll(cleaned, 0o755); err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(cleaned)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if err := os.RemoveAll(filepath.Join(cleaned, entry.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func resolveStorePath(cleaned string) (string, error) {
+	if _, err := os.Lstat(cleaned); err == nil {
+		resolved, err := filepath.EvalSymlinks(cleaned)
+		if err != nil {
+			return "", err
+		}
+		return filepath.Clean(resolved), nil
+	} else if !os.IsNotExist(err) {
+		return "", err
+	}
+	parent := filepath.Dir(cleaned)
+	resolvedParent, err := filepath.EvalSymlinks(parent)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Clean(filepath.Join(resolvedParent, filepath.Base(cleaned))), nil
+}
+
+func storePathDepth(path string) int {
+	rel, err := filepath.Rel("/", filepath.Clean(path))
+	if err != nil || rel == "." {
+		return 0
+	}
+	n := 0
+	for _, part := range strings.Split(rel, string(os.PathSeparator)) {
+		if part != "" && part != "." {
+			n++
+		}
+	}
+	return n
+}
+
 func newFileStore(conf *config.Config) (filestore.FileStore, func() error) {
 	const timeoutCheckInterval = 15 * time.Second
 	var removeDir func() error
 
 	var fs filestore.FileStore
-	if conf.Dir == "" {
+	explicitDir := conf.Dir != ""
+	if !explicitDir {
 		if runtime.GOOS == "linux" {
 			conf.Dir = "/dev/shm"
 		} else {
@@ -560,7 +623,13 @@ func newFileStore(conf *config.Config) (filestore.FileStore, func() error) {
 			return os.RemoveAll(conf.Dir)
 		}
 	}
-	os.MkdirAll(conf.Dir, 0o755)
+	if explicitDir && conf.DirCleanOnStart {
+		if err := cleanExplicitFileStoreDir(conf.Dir); err != nil {
+			logger.Fatal("refusing to clean file store dir", zap.Error(err))
+		}
+	} else {
+		os.MkdirAll(conf.Dir, 0o755)
+	}
 	fs = filestore.NewFileLocalStore(conf.Dir)
 	if conf.EnableMetrics {
 		fs = newMetricsFileStore(fs)

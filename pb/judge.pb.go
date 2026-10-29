@@ -9,7 +9,6 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/gofeaturespb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	unsafe "unsafe"
@@ -27,7 +26,7 @@ var File_judge_proto protoreflect.FileDescriptor
 const file_judge_proto_rawDesc = "" +
 	"\n" +
 	"\vjudge.proto\x12\x02pb\x1a\x1bgoogle/protobuf/empty.proto\x1a\rrequest.proto\x1a\x0eresponse.proto\x1a\x14stream_request.proto\x1a\x15stream_response.proto\x1a\n" +
-	"file.proto\x1a\vminio.proto\x1a!google/protobuf/go_features.proto2\xb9\x04\n" +
+	"file.proto\x1a\vminio.proto2\xb9\x04\n" +
 	"\bExecutor\x12!\n" +
 	"\x04Exec\x12\v.pb.Request\x1a\f.pb.Response\x127\n" +
 	"\n" +
@@ -43,7 +42,7 @@ const file_judge_proto_rawDesc = "" +
 	"\n" +
 	"FileDelete\x12\x15.pb.FileDeleteRequest\x1a\x16.google.protobuf.Empty\x12T\n" +
 	"\x15FileDownloadFromMinio\x12\x1c.pb.DownloadFromMinioRequest\x1a\x1d.pb.DownloadFromMinioResponse\x12E\n" +
-	"\x11FileUploadToMinio\x12\x18.pb.UploadToMinioRequest\x1a\x16.google.protobuf.EmptyB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
+	"\x11FileUploadToMinio\x12\x18.pb.UploadToMinioRequest\x1a\x16.google.protobuf.EmptyB\x1fZ\x1dgithub.com/criyle/go-judge/pbb\x06proto3"
 
 var file_judge_proto_goTypes = []any{
 	(*Request)(nil),                   // 0: pb.Request

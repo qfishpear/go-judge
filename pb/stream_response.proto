@@ -1,13 +1,10 @@
-edition = "2023";
+syntax = "proto3";
 
 package pb;
 
-option features.field_presence = IMPLICIT;
 option go_package = "github.com/criyle/go-judge/pb";
-option features.(pb.go).api_level = API_OPAQUE;
 
 import "response.proto";
-import "google/protobuf/go_features.proto";
 
 message StreamResponse {
   message Output {

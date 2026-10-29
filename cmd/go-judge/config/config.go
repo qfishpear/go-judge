@@ -25,8 +25,9 @@ type Config struct {
 	NoFallback         bool   `flagUsage:"exit if fallback to rlimit / rusage mode"`
 
 	// file store
-	SrcPrefix []string `flagUsage:"specifies directory prefix for source type copyin (example: -src-prefix=/home,/usr)"`
-	Dir       string   `flagUsage:"specifies directory to store file upload / download (in memory by default)"`
+	SrcPrefix       []string `flagUsage:"specifies directory prefix for source type copyin (example: -src-prefix=/home,/usr)"`
+	Dir             string   `flagUsage:"specifies directory to store file upload / download (in memory by default)"`
+	DirCleanOnStart bool     `flagUsage:"delete entries in an explicit -dir before opening the file store" default:"false"`
 
 	// runner limit
 	TimeLimitCheckerInterval time.Duration `flagUsage:"specifies time limit checker interval" default:"100ms"`
@@ -47,6 +48,7 @@ type Config struct {
 	GRPCAddr      string        `flagUsage:"specifies the grpc binding address"`
 	MonitorAddr   string        `flagUsage:"specifies the metrics binding address"`
 	AuthToken     string        `flagUsage:"bearer token auth for REST / gRPC"`
+	MinioTimeout  time.Duration `flagUsage:"total timeout for one MinIO download or upload RPC" default:"1h"`
 	GRPCMsgSize   *envexec.Size `flagUsage:"message size limit for gRPC message" default:"64m"`
 	EnableDebug   bool          `flagUsage:"enable debug endpoint"`
 	EnableMetrics bool          `flagUsage:"enable prometheus metrics endpoint"`

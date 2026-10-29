@@ -55,6 +55,7 @@ type Cmd struct {
 	// CopyOutDir is deprecated and ignored.
 	CopyOutDir      string `json:"copyOutDir"`
 	CopyOutTruncate bool   `json:"copyOutTruncate"`
+	OutputLimit     uint64 `json:"outputLimit"`
 
 	TTY               bool `json:"tty,omitempty"`
 	StrictMemoryLimit bool `json:"strictMemoryLimit"`
@@ -343,6 +344,7 @@ func convertCmd(c Cmd, srcPrefix []string) (worker.Cmd, error) {
 		CopyOutCached:     convertCopyOut(c.CopyOutCached),
 		CopyOutMax:        c.CopyOutMax,
 		CopyOutTruncate:   c.CopyOutTruncate,
+		OutputLimit:       envexec.Size(c.OutputLimit),
 	}
 	for _, f := range c.Files {
 		cf, err := convertCmdFile(f, srcPrefix)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -19,25 +20,28 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // New creates grpc executor server
-func New(worker worker.Worker, fs filestore.FileStore, srcPrefix []string, logger *zap.Logger) pb.ExecutorServer {
+func New(worker worker.Worker, fs filestore.FileStore, srcPrefix []string, logger *zap.Logger, minioTimeout time.Duration) pb.ExecutorServer {
 	return &execServer{
-		worker:    worker,
-		fs:        fs,
-		srcPrefix: srcPrefix,
-		logger:    logger,
+		worker:       worker,
+		fs:           fs,
+		srcPrefix:    srcPrefix,
+		logger:       logger,
+		minioTimeout: minioTimeout,
 	}
 }
 
 type execServer struct {
 	pb.UnimplementedExecutorServer
-	worker    worker.Worker
-	fs        filestore.FileStore
-	srcPrefix []string
-	logger    *zap.Logger
+	worker       worker.Worker
+	fs           filestore.FileStore
+	srcPrefix    []string
+	logger       *zap.Logger
+	minioTimeout time.Duration
 }
 
 func (e *execServer) Exec(ctx context.Context, req *pb.Request) (*pb.Response, error) {
@@ -52,8 +56,13 @@ func (e *execServer) Exec(ctx context.Context, req *pb.Request) (*pb.Response, e
 	if ce := e.logger.Check(zap.DebugLevel, "request"); ce != nil {
 		ce.Write(zap.String("body", fmt.Sprintf("%+v", r)))
 	}
+	removeID := func(id string) { e.fs.Remove(id) }
 	rtCh, _ := e.worker.Submit(ctx, r)
 	rt := <-rtCh
+	if ctx.Err() != nil {
+		model.ReleaseResponse(rt, removeID)
+		return nil, status.FromContextError(ctx.Err()).Err()
+	}
 	if ce := e.logger.Check(zap.DebugLevel, "response"); ce != nil {
 		ce.Write(zap.String("body", fmt.Sprintf("%+v", rt)))
 	}
@@ -66,11 +75,17 @@ func (e *execServer) Exec(ctx context.Context, req *pb.Request) (*pb.Response, e
 	}
 	ret, err := model.ConvertResponse(rt, false)
 	if err != nil {
+		model.ReleaseResponse(rt, removeID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	resp, err := convertPBResponse(ret)
 	if err != nil {
+		model.ReleaseResponse(rt, removeID)
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if ctx.Err() != nil {
+		model.ReleaseResponse(rt, removeID)
+		return nil, status.FromContextError(ctx.Err()).Err()
 	}
 	return resp, nil
 }
@@ -151,14 +166,15 @@ func (e *execServer) FileGet(c context.Context, req *pb.FileGetRequest) (*pb.Fil
 	}.Build(), nil
 }
 
-func (e *execServer) FileAdd(c context.Context, req *pb.FileAddRequest) (*pb.FileID, error) {
+func (e *execServer) FileAdd(ctx context.Context, req *pb.FileAddRequest) (*pb.FileID, error) {
 	f, err := e.fs.New()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	defer f.Close()
+	added := false
 	defer func() {
-		if err != nil {
+		if !added {
 			os.Remove(f.Name())
 		}
 	}()
@@ -169,6 +185,11 @@ func (e *execServer) FileAdd(c context.Context, req *pb.FileAddRequest) (*pb.Fil
 	fid, err := e.fs.Add(req.GetName(), f.Name())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+	added = true
+	if ctx.Err() != nil {
+		e.fs.Remove(fid)
+		return nil, status.FromContextError(ctx.Err()).Err()
 	}
 	return pb.FileID_builder{
 		FileID: fid,
@@ -194,82 +215,72 @@ func (e *execServer) FileDownloadFromMinio(ctx context.Context, req *pb.Download
 
 	fileIds := make([]string, 0, len(urls))
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: e.minioTimeout,
 	}
-	success := false
-	tmpFilePath := ""
-
-	// Defer rollback if not all operations succeeded
-	defer func() {
-		if !success {
-			// Remove all successfully added files from filestore
-			for _, fileId := range fileIds {
-				e.fs.Remove(fileId)
-			}
-			if tmpFilePath != "" {
-				os.Remove(tmpFilePath)
-			}
-		}
-	}()
-
 	for _, downloadURL := range urls {
-		// Create HTTP GET request
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "failed to create request for URL %q: %v", downloadURL, err)
+		fileId, err := e.downloadFromMinio(ctx, client, downloadURL)
+		if err == nil {
+			fileIds = append(fileIds, fileId)
 		}
-
-		// Execute request
-		resp, err := client.Do(httpReq)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to download from %q: %v", downloadURL, err)
+		if err != nil || ctx.Err() != nil {
+			for _, id := range fileIds {
+				e.fs.Remove(id)
+			}
+			if ctx.Err() != nil {
+				return nil, status.FromContextError(ctx.Err()).Err()
+			}
+			return nil, err
 		}
-
-		// Check status code
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			return nil, status.Errorf(codes.Internal, "failed to download from %q: status code %d", downloadURL, resp.StatusCode)
-		}
-
-		// Create temporary file in filestore
-		tmpFile, err := e.fs.New()
-		if err != nil {
-			resp.Body.Close()
-			return nil, status.Errorf(codes.Internal, "failed to create temporary file: %v", err)
-		}
-
-		// Store temporary file path for rollback
-		tmpFilePath = tmpFile.Name()
-
-		// Copy response body to file
-		if _, err := io.Copy(tmpFile, resp.Body); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to write downloaded content: %v", err)
-		}
-
-		if err := resp.Body.Close(); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to close response body: %v", err)
-		}
-
-		// Close file before adding to store
-		if err := tmpFile.Close(); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to close temporary file: %v", err)
-		}
-
-		// Add file to store with extracted filename
-		fileId, err := e.fs.Add("", tmpFile.Name())
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to add file to store: %v", err)
-		}
-
-		tmpFilePath = ""
-		fileIds = append(fileIds, fileId)
 	}
-
-	success = true
 
 	return pb.DownloadFromMinioResponse_builder{
 		FileIds: fileIds,
 	}.Build(), nil
+}
+
+// downloadFromMinio stores one presigned URL into the file store. On error
+// nothing from this URL is left in the store.
+func (e *execServer) downloadFromMinio(ctx context.Context, client *http.Client, downloadURL string) (string, error) {
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, downloadURL, nil)
+	if err != nil {
+		return "", status.Errorf(codes.InvalidArgument, "failed to create request for URL %q: %v", redactURL(downloadURL), redactErrText(err))
+	}
+
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return "", status.Errorf(codes.Internal, "failed to download from %q: %s", redactURL(downloadURL), redactErrText(err))
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", status.Errorf(codes.Internal, "failed to download from %q: status code %d", redactURL(downloadURL), resp.StatusCode)
+	}
+
+	tmpFile, err := e.fs.New()
+	if err != nil {
+		return "", status.Errorf(codes.Internal, "failed to create temporary file: %v", err)
+	}
+	added := false
+	defer func() {
+		tmpFile.Close()
+		if !added {
+			os.Remove(tmpFile.Name())
+		}
+	}()
+
+	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+		return "", status.Errorf(codes.Internal, "failed to write downloaded content: %v", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		return "", status.Errorf(codes.Internal, "failed to close temporary file: %v", err)
+	}
+
+	fileId, err := e.fs.Add("", tmpFile.Name())
+	if err != nil {
+		return "", status.Errorf(codes.Internal, "failed to add file to store: %v", err)
+	}
+	added = true
+	return fileId, nil
 }
 
 // newMinioPutRequest builds a PUT for a presigned MinIO URL.
@@ -388,7 +399,7 @@ func (e *execServer) FileUploadToMinio(ctx context.Context, req *pb.UploadToMini
 	}
 
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: e.minioTimeout,
 	}
 
 	for _, item := range items {
@@ -403,13 +414,13 @@ func (e *execServer) FileUploadToMinio(ctx context.Context, req *pb.UploadToMini
 
 		httpReq, err := newMinioPutRequest(ctx, presignedURL, name, file)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to read file %q: %v", fileId, err)
+			return nil, status.Errorf(codes.Internal, "failed to read file %q: %s", fileId, redactErrText(err))
 		}
 
 		// Execute request
 		resp, err := client.Do(httpReq)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to upload file %q: %v", fileId, err)
+			return nil, status.Errorf(codes.Internal, "failed to upload file %q: %s", fileId, redactErrText(err))
 		}
 
 		// Check status code (200 or 204 are typically success for PUT)
@@ -431,11 +442,16 @@ func (e *execServer) FileUploadToMinio(ctx context.Context, req *pb.UploadToMini
 }
 
 func convertPBResponse(r model.Response) (*pb.Response, error) {
-	res := pb.Response_builder{
-		RequestID: r.RequestID,
-		Results:   make([]*pb.Response_Result, 0, len(r.Results)),
-		Error:     r.ErrorMsg,
-	}.Build()
+	b := pb.Response_builder{
+		Results: make([]*pb.Response_Result, 0, len(r.Results)),
+	}
+	if r.RequestID != "" {
+		b.RequestID = proto.String(r.RequestID)
+	}
+	if r.ErrorMsg != "" {
+		b.Error = proto.String(r.ErrorMsg)
+	}
+	res := b.Build()
 	for _, c := range r.Results {
 		rt, err := convertPBResult(c)
 		if err != nil {
@@ -447,10 +463,9 @@ func convertPBResponse(r model.Response) (*pb.Response, error) {
 }
 
 func convertPBResult(r model.Result) (*pb.Response_Result, error) {
-	return pb.Response_Result_builder{
+	b := pb.Response_Result_builder{
 		Status:     pb.Response_Result_StatusType(r.Status),
 		ExitStatus: int32(r.ExitStatus),
-		Error:      r.Error,
 		Time:       r.Time,
 		RunTime:    r.RunTime,
 		Memory:     r.Memory,
@@ -458,17 +473,24 @@ func convertPBResult(r model.Result) (*pb.Response_Result, error) {
 		Files:      r.Buffs,
 		FileIDs:    r.FileIDs,
 		FileError:  convertPBFileError(r.FileError),
-	}.Build(), nil
+	}
+	if r.Error != "" {
+		b.Error = proto.String(r.Error)
+	}
+	return b.Build(), nil
 }
 
 func convertPBFileError(fe []envexec.FileError) []*pb.Response_FileError {
 	rt := make([]*pb.Response_FileError, 0, len(fe))
 	for _, e := range fe {
-		rt = append(rt, pb.Response_FileError_builder{
-			Name:    e.Name,
-			Type:    convertPBFileErrorType(e.Type),
-			Message: e.Message,
-		}.Build())
+		b := pb.Response_FileError_builder{
+			Name: e.Name,
+			Type: convertPBFileErrorType(e.Type),
+		}
+		if e.Message != "" {
+			b.Message = proto.String(e.Message)
+		}
+		rt = append(rt, b.Build())
 	}
 	return rt
 }
@@ -567,6 +589,7 @@ func convertPBCmd(c *pb.Request_CmdType, srcPrefix []string) (cm worker.Cmd, err
 		CopyOutCached:     convertCopyOut(c.GetCopyOutCached()),
 		CopyOutMax:        c.GetCopyOutMax(),
 		CopyOutTruncate:   c.GetCopyOutTruncate(),
+		OutputLimit:       envexec.Size(c.GetOutputLimit()),
 		Symlinks:          c.GetSymlinks(),
 	}
 	for _, f := range c.GetFiles() {
@@ -609,6 +632,30 @@ func convertPBFile(c *pb.Request_File, srcPrefix []string) (worker.CmdFile, erro
 		return &worker.Collector{Name: c.GetPipe().GetName(), Max: envexec.Size(c.GetPipe().GetMax()), Pipe: c.GetPipe().GetPipe()}, nil
 	}
 	return nil, fmt.Errorf("request file type not supported: %T", c)
+}
+
+func redactURL(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		if i := strings.IndexByte(raw, '?'); i >= 0 {
+			return raw[:i]
+		}
+		return raw
+	}
+	u.RawQuery = ""
+	u.Fragment = ""
+	return u.String()
+}
+
+func redactErrText(err error) string {
+	if err == nil {
+		return ""
+	}
+	var ue *url.Error
+	if errors.As(err, &ue) {
+		return fmt.Sprintf("%s %q: %s", ue.Op, redactURL(ue.URL), redactErrText(ue.Err))
+	}
+	return err.Error()
 }
 
 func convertCopyOut(copyOut []*pb.Request_CmdCopyOutFile) []worker.CmdCopyOutFile {

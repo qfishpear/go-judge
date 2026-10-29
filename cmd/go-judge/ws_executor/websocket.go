@@ -2,8 +2,8 @@ package wsexecutor
 
 import (
 	"context"
-	"fmt"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -26,11 +26,12 @@ type Register interface {
 }
 
 // New creates new websocket handle
-func New(worker worker.Worker, srcPrefix []string, logger *zap.Logger) Register {
+func New(worker worker.Worker, srcPrefix []string, logger *zap.Logger, removeFile func(string)) Register {
 	return &wsHandle{
-		worker:    worker,
-		srcPrefix: srcPrefix,
-		logger:    logger,
+		worker:     worker,
+		srcPrefix:  srcPrefix,
+		logger:     logger,
+		removeFile: removeFile,
 	}
 }
 
@@ -47,9 +48,10 @@ const (
 )
 
 type wsHandle struct {
-	worker    worker.Worker
-	srcPrefix []string
-	logger    *zap.Logger
+	worker     worker.Worker
+	srcPrefix  []string
+	logger     *zap.Logger
+	removeFile func(string)
 }
 
 type wsRequest struct {
@@ -208,7 +210,7 @@ func (h *wsHandle) handleStream(c *gin.Context) {
 
 	w := &streamWrapper{ctx: ctx, conn: conn, sendCh: make(chan stream.Response)}
 	go w.sendLoop()
-	if err := stream.Start(ctx, w, h.worker, h.srcPrefix, h.logger); err != nil {
+	if err := stream.Start(ctx, w, h.worker, h.srcPrefix, h.logger, h.removeFile); err != nil {
 		if !isExpectedWSClose(err) {
 			h.logger.Debug("stream start", zap.Error(err))
 			c.Error(err)

@@ -1,11 +1,8 @@
-edition = "2023";
+syntax = "proto3";
 
 package pb;
-import "google/protobuf/go_features.proto";
 
-option features.field_presence = IMPLICIT;
 option go_package = "github.com/criyle/go-judge/pb";
-option features.(pb.go).api_level = API_OPAQUE;
 
 message UploadItem {
   string fileId = 1;

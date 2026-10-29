@@ -1,11 +1,8 @@
-edition = "2023";
+syntax = "proto3";
 
 package pb;
-import "google/protobuf/go_features.proto";
 
-option features.field_presence = IMPLICIT;
 option go_package = "github.com/criyle/go-judge/pb";
-option features.(pb.go).api_level = API_OPAQUE;
 
 message Response {
   message FileError {
@@ -26,7 +23,7 @@ message Response {
     }
     string name = 1;
     ErrorType type = 2;
-    string message = 3;
+    optional string message = 3;
   }
 
   message Result {
@@ -49,7 +46,7 @@ message Response {
 
     StatusType status = 1;
     int32 exitStatus = 2;
-    string error = 3;
+    optional string error = 3;
     uint64 time = 4;    // cpu time
     uint64 runTime = 8; // clock time
     uint64 procPeak = 10;
@@ -58,7 +55,7 @@ message Response {
     map<string, string> fileIDs = 7;
     repeated FileError fileError = 9;
   }
-  string requestID = 1;
+  optional string requestID = 1;
   repeated Result results = 2;
-  string error = 3;
+  optional string error = 3;
 }

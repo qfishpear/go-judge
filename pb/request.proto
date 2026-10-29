@@ -1,13 +1,10 @@
-edition = "2023";
+syntax = "proto3";
 
 package pb;
 
-option features.field_presence = IMPLICIT;
 option go_package = "github.com/criyle/go-judge/pb";
-option features.(pb.go).api_level = API_OPAQUE;
 
 import "google/protobuf/empty.proto";
-import "google/protobuf/go_features.proto";
 
 message Request {
   message LocalFile { string src = 1; }
@@ -16,13 +13,13 @@ message Request {
 
   message CachedFile {
     string fileID = 1;
-    bool forceCopy = 2;
+    optional bool forceCopy = 2;
   }
 
   message PipeCollector {
     string name = 1;
     int64 max = 2;
-    bool pipe = 3;
+    optional bool pipe = 3;
   }
 
   message File {
@@ -44,17 +41,17 @@ message Request {
     repeated string args = 1;
     repeated string env = 2;
     repeated File files = 3;
-    bool tty = 13;
+    optional bool tty = 13;
 
-    uint64 cpuTimeLimit = 4;
-    uint64 clockTimeLimit = 5;
-    uint64 memoryLimit = 6;
-    uint64 stackLimit = 12;
-    uint64 procLimit = 7;
-    uint64 cpuRateLimit = 15;
-    string cpuSetLimit = 17;
-    bool dataSegmentLimit = 16;
-    bool addressSpaceLimit = 19;
+    optional uint64 cpuTimeLimit = 4;
+    optional uint64 clockTimeLimit = 5;
+    optional uint64 memoryLimit = 6;
+    optional uint64 stackLimit = 12;
+    optional uint64 procLimit = 7;
+    optional uint64 cpuRateLimit = 15;
+    optional string cpuSetLimit = 17;
+    optional bool dataSegmentLimit = 16;
+    optional bool addressSpaceLimit = 19;
 
     map<string, File> copyIn = 8;
     map<string, string> symlinks = 18;
@@ -62,14 +59,16 @@ message Request {
     repeated CmdCopyOutFile copyOut = 9;
     repeated CmdCopyOutFile copyOutCached = 10;
     // Deprecated: ignored by the executor.
-    string copyOutDir = 11;
-    uint64 copyOutMax = 14;
-    bool copyOutTruncate = 20;
+    optional string copyOutDir = 11 [deprecated = true];
+    optional uint64 copyOutMax = 14;
+    optional bool copyOutTruncate = 20;
+    // 0 or unset uses the server-wide -output-limit.
+    optional uint64 outputLimit = 21;
   }
 
   message CmdCopyOutFile {
     string name = 1;
-    bool optional = 2;
+    optional bool optional = 2;
   }
 
   message CmdFdIndex {
@@ -80,10 +79,10 @@ message Request {
   message PipeMap {
     CmdFdIndex in = 1;
     CmdFdIndex out = 2;
-    bool proxy = 3;
-    string name = 4;
-    uint64 max = 5;
-    bool disableZeroCopy = 6;
+    optional bool proxy = 3;
+    optional string name = 4;
+    optional uint64 max = 5;
+    optional bool disableZeroCopy = 6;
   }
 
   // ShmMap shares a single memfd-backed shared memory region between multiple
@@ -96,7 +95,7 @@ message Request {
     repeated CmdFdIndex targets = 2;
   }
 
-  string requestID = 1;
+  optional string requestID = 1;
   repeated CmdType cmd = 2;
   repeated PipeMap pipeMapping = 3;
   repeated ShmMap shmMapping = 4;

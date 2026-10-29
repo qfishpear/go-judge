@@ -89,6 +89,7 @@ func convertPBStreamRequest(req *pb.Request) *model.Request {
 			CopyOutCached:     convertStreamCopyOut(cmd.GetCopyOutCached()),
 			CopyOutMax:        cmd.GetCopyOutMax(),
 			CopyOutDir:        cmd.GetCopyOutDir(),
+			OutputLimit:       cmd.GetOutputLimit(),
 			// CopyOutTruncate stays unset. An oversized copyOut fails instead of
 			// keeping a truncated file.
 		})
@@ -185,7 +186,7 @@ func (e *execServer) ExecStream(es pb.Executor_ExecStreamServer) error {
 	w := &streamWrapper{
 		es: es,
 	}
-	if err := stream.Start(es.Context(), w, e.worker, e.srcPrefix, e.logger); err != nil {
+	if err := stream.Start(es.Context(), w, e.worker, e.srcPrefix, e.logger, func(id string) { e.fs.Remove(id) }); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 	return nil

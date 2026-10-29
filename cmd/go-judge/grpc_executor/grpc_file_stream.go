@@ -8,6 +8,7 @@ import (
 	"github.com/criyle/go-judge/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 const fileStreamChunkSize = 1 << 20
@@ -33,10 +34,11 @@ func (e *execServer) FileGetStream(f *pb.FileID, stream pb.Executor_FileGetStrea
 				chunkName = name
 				first = false
 			}
-			if err := stream.Send(pb.FileContent_builder{
-				Name:    chunkName,
-				Content: buf[:n],
-			}.Build()); err != nil {
+			b := pb.FileContent_builder{Content: buf[:n]}
+			if chunkName != "" {
+				b.Name = proto.String(chunkName)
+			}
+			if err := stream.Send(b.Build()); err != nil {
 				return err
 			}
 		}
@@ -49,7 +51,11 @@ func (e *execServer) FileGetStream(f *pb.FileID, stream pb.Executor_FileGetStrea
 	}
 
 	if first {
-		return stream.Send(pb.FileContent_builder{Name: name}.Build())
+		b := pb.FileContent_builder{}
+		if name != "" {
+			b.Name = proto.String(name)
+		}
+		return stream.Send(b.Build())
 	}
 	return nil
 }

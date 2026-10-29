@@ -9,7 +9,6 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/gofeaturespb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	unsafe "unsafe"
@@ -24,10 +23,12 @@ const (
 
 type Request struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RequestID   string                 `protobuf:"bytes,1,opt,name=requestID"`
-	xxx_hidden_Cmd         *[]*Request_CmdType    `protobuf:"bytes,2,rep,name=cmd"`
-	xxx_hidden_PipeMapping *[]*Request_PipeMap    `protobuf:"bytes,3,rep,name=pipeMapping"`
-	xxx_hidden_ShmMapping  *[]*Request_ShmMap     `protobuf:"bytes,4,rep,name=shmMapping"`
+	xxx_hidden_RequestID   *string                `protobuf:"bytes,1,opt,name=requestID,proto3,oneof"`
+	xxx_hidden_Cmd         *[]*Request_CmdType    `protobuf:"bytes,2,rep,name=cmd,proto3"`
+	xxx_hidden_PipeMapping *[]*Request_PipeMap    `protobuf:"bytes,3,rep,name=pipeMapping,proto3"`
+	xxx_hidden_ShmMapping  *[]*Request_ShmMap     `protobuf:"bytes,4,rep,name=shmMapping,proto3"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -59,7 +60,10 @@ func (x *Request) ProtoReflect() protoreflect.Message {
 
 func (x *Request) GetRequestID() string {
 	if x != nil {
-		return x.xxx_hidden_RequestID
+		if x.xxx_hidden_RequestID != nil {
+			return *x.xxx_hidden_RequestID
+		}
+		return ""
 	}
 	return ""
 }
@@ -92,7 +96,8 @@ func (x *Request) GetShmMapping() []*Request_ShmMap {
 }
 
 func (x *Request) SetRequestID(v string) {
-	x.xxx_hidden_RequestID = v
+	x.xxx_hidden_RequestID = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 4)
 }
 
 func (x *Request) SetCmd(v []*Request_CmdType) {
@@ -107,10 +112,22 @@ func (x *Request) SetShmMapping(v []*Request_ShmMap) {
 	x.xxx_hidden_ShmMapping = &v
 }
 
+func (x *Request) HasRequestID() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *Request) ClearRequestID() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_RequestID = nil
+}
+
 type Request_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	RequestID   string
+	RequestID   *string
 	Cmd         []*Request_CmdType
 	PipeMapping []*Request_PipeMap
 	ShmMapping  []*Request_ShmMap
@@ -120,7 +137,10 @@ func (b0 Request_builder) Build() *Request {
 	m0 := &Request{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_RequestID = b.RequestID
+	if b.RequestID != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 4)
+		x.xxx_hidden_RequestID = b.RequestID
+	}
 	x.xxx_hidden_Cmd = &b.Cmd
 	x.xxx_hidden_PipeMapping = &b.PipeMapping
 	x.xxx_hidden_ShmMapping = &b.ShmMapping
@@ -129,7 +149,7 @@ func (b0 Request_builder) Build() *Request {
 
 type Request_LocalFile struct {
 	state          protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Src string                 `protobuf:"bytes,1,opt,name=src"`
+	xxx_hidden_Src string                 `protobuf:"bytes,1,opt,name=src,proto3"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -186,7 +206,7 @@ func (b0 Request_LocalFile_builder) Build() *Request_LocalFile {
 
 type Request_MemoryFile struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Content []byte                 `protobuf:"bytes,1,opt,name=content"`
+	xxx_hidden_Content []byte                 `protobuf:"bytes,1,opt,name=content,proto3"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -245,11 +265,13 @@ func (b0 Request_MemoryFile_builder) Build() *Request_MemoryFile {
 }
 
 type Request_CachedFile struct {
-	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileID    string                 `protobuf:"bytes,1,opt,name=fileID"`
-	xxx_hidden_ForceCopy bool                   `protobuf:"varint,2,opt,name=forceCopy"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_FileID      string                 `protobuf:"bytes,1,opt,name=fileID,proto3"`
+	xxx_hidden_ForceCopy   bool                   `protobuf:"varint,2,opt,name=forceCopy,proto3,oneof"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Request_CachedFile) Reset() {
@@ -297,13 +319,26 @@ func (x *Request_CachedFile) SetFileID(v string) {
 
 func (x *Request_CachedFile) SetForceCopy(v bool) {
 	x.xxx_hidden_ForceCopy = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *Request_CachedFile) HasForceCopy() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *Request_CachedFile) ClearForceCopy() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_ForceCopy = false
 }
 
 type Request_CachedFile_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	FileID    string
-	ForceCopy bool
+	ForceCopy *bool
 }
 
 func (b0 Request_CachedFile_builder) Build() *Request_CachedFile {
@@ -311,17 +346,22 @@ func (b0 Request_CachedFile_builder) Build() *Request_CachedFile {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_FileID = b.FileID
-	x.xxx_hidden_ForceCopy = b.ForceCopy
+	if b.ForceCopy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_ForceCopy = *b.ForceCopy
+	}
 	return m0
 }
 
 type Request_PipeCollector struct {
-	state           protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name string                 `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Max  int64                  `protobuf:"varint,2,opt,name=max"`
-	xxx_hidden_Pipe bool                   `protobuf:"varint,3,opt,name=pipe"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Max         int64                  `protobuf:"varint,2,opt,name=max,proto3"`
+	xxx_hidden_Pipe        bool                   `protobuf:"varint,3,opt,name=pipe,proto3,oneof"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Request_PipeCollector) Reset() {
@@ -380,6 +420,19 @@ func (x *Request_PipeCollector) SetMax(v int64) {
 
 func (x *Request_PipeCollector) SetPipe(v bool) {
 	x.xxx_hidden_Pipe = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 3)
+}
+
+func (x *Request_PipeCollector) HasPipe() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+}
+
+func (x *Request_PipeCollector) ClearPipe() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Pipe = false
 }
 
 type Request_PipeCollector_builder struct {
@@ -387,7 +440,7 @@ type Request_PipeCollector_builder struct {
 
 	Name string
 	Max  int64
-	Pipe bool
+	Pipe *bool
 }
 
 func (b0 Request_PipeCollector_builder) Build() *Request_PipeCollector {
@@ -396,7 +449,10 @@ func (b0 Request_PipeCollector_builder) Build() *Request_PipeCollector {
 	_, _ = b, x
 	x.xxx_hidden_Name = b.Name
 	x.xxx_hidden_Max = b.Max
-	x.xxx_hidden_Pipe = b.Pipe
+	if b.Pipe != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 3)
+		x.xxx_hidden_Pipe = *b.Pipe
+	}
 	return m0
 }
 
@@ -714,29 +770,29 @@ type isRequest_File_File interface {
 }
 
 type request_File_Local struct {
-	Local *Request_LocalFile `protobuf:"bytes,1,opt,name=local,oneof"`
+	Local *Request_LocalFile `protobuf:"bytes,1,opt,name=local,proto3,oneof"`
 }
 
 type request_File_Memory struct {
-	Memory *Request_MemoryFile `protobuf:"bytes,2,opt,name=memory,oneof"`
+	Memory *Request_MemoryFile `protobuf:"bytes,2,opt,name=memory,proto3,oneof"`
 }
 
 type request_File_Cached struct {
-	Cached *Request_CachedFile `protobuf:"bytes,3,opt,name=cached,oneof"`
+	Cached *Request_CachedFile `protobuf:"bytes,3,opt,name=cached,proto3,oneof"`
 }
 
 type request_File_Pipe struct {
-	Pipe *Request_PipeCollector `protobuf:"bytes,4,opt,name=pipe,oneof"`
+	Pipe *Request_PipeCollector `protobuf:"bytes,4,opt,name=pipe,proto3,oneof"`
 }
 
 type request_File_StreamIn struct {
 	// streamIn only valid in streaming RPC
-	StreamIn *emptypb.Empty `protobuf:"bytes,5,opt,name=streamIn,oneof"`
+	StreamIn *emptypb.Empty `protobuf:"bytes,5,opt,name=streamIn,proto3,oneof"`
 }
 
 type request_File_StreamOut struct {
 	// streamOut only valid in streaming RPC
-	StreamOut *emptypb.Empty `protobuf:"bytes,6,opt,name=streamOut,oneof"`
+	StreamOut *emptypb.Empty `protobuf:"bytes,6,opt,name=streamOut,proto3,oneof"`
 }
 
 func (*request_File_Local) isRequest_File_File() {}
@@ -753,26 +809,29 @@ func (*request_File_StreamOut) isRequest_File_File() {}
 
 type Request_CmdType struct {
 	state                        protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Args              []string                   `protobuf:"bytes,1,rep,name=args"`
-	xxx_hidden_Env               []string                   `protobuf:"bytes,2,rep,name=env"`
-	xxx_hidden_Files             *[]*Request_File           `protobuf:"bytes,3,rep,name=files"`
-	xxx_hidden_Tty               bool                       `protobuf:"varint,13,opt,name=tty"`
-	xxx_hidden_CpuTimeLimit      uint64                     `protobuf:"varint,4,opt,name=cpuTimeLimit"`
-	xxx_hidden_ClockTimeLimit    uint64                     `protobuf:"varint,5,opt,name=clockTimeLimit"`
-	xxx_hidden_MemoryLimit       uint64                     `protobuf:"varint,6,opt,name=memoryLimit"`
-	xxx_hidden_StackLimit        uint64                     `protobuf:"varint,12,opt,name=stackLimit"`
-	xxx_hidden_ProcLimit         uint64                     `protobuf:"varint,7,opt,name=procLimit"`
-	xxx_hidden_CpuRateLimit      uint64                     `protobuf:"varint,15,opt,name=cpuRateLimit"`
-	xxx_hidden_CpuSetLimit       string                     `protobuf:"bytes,17,opt,name=cpuSetLimit"`
-	xxx_hidden_DataSegmentLimit  bool                       `protobuf:"varint,16,opt,name=dataSegmentLimit"`
-	xxx_hidden_AddressSpaceLimit bool                       `protobuf:"varint,19,opt,name=addressSpaceLimit"`
-	xxx_hidden_CopyIn            map[string]*Request_File   `protobuf:"bytes,8,rep,name=copyIn" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Symlinks          map[string]string          `protobuf:"bytes,18,rep,name=symlinks" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_CopyOut           *[]*Request_CmdCopyOutFile `protobuf:"bytes,9,rep,name=copyOut"`
-	xxx_hidden_CopyOutCached     *[]*Request_CmdCopyOutFile `protobuf:"bytes,10,rep,name=copyOutCached"`
-	xxx_hidden_CopyOutDir        string                     `protobuf:"bytes,11,opt,name=copyOutDir"`
-	xxx_hidden_CopyOutMax        uint64                     `protobuf:"varint,14,opt,name=copyOutMax"`
-	xxx_hidden_CopyOutTruncate   bool                       `protobuf:"varint,20,opt,name=copyOutTruncate"`
+	xxx_hidden_Args              []string                   `protobuf:"bytes,1,rep,name=args,proto3"`
+	xxx_hidden_Env               []string                   `protobuf:"bytes,2,rep,name=env,proto3"`
+	xxx_hidden_Files             *[]*Request_File           `protobuf:"bytes,3,rep,name=files,proto3"`
+	xxx_hidden_Tty               bool                       `protobuf:"varint,13,opt,name=tty,proto3,oneof"`
+	xxx_hidden_CpuTimeLimit      uint64                     `protobuf:"varint,4,opt,name=cpuTimeLimit,proto3,oneof"`
+	xxx_hidden_ClockTimeLimit    uint64                     `protobuf:"varint,5,opt,name=clockTimeLimit,proto3,oneof"`
+	xxx_hidden_MemoryLimit       uint64                     `protobuf:"varint,6,opt,name=memoryLimit,proto3,oneof"`
+	xxx_hidden_StackLimit        uint64                     `protobuf:"varint,12,opt,name=stackLimit,proto3,oneof"`
+	xxx_hidden_ProcLimit         uint64                     `protobuf:"varint,7,opt,name=procLimit,proto3,oneof"`
+	xxx_hidden_CpuRateLimit      uint64                     `protobuf:"varint,15,opt,name=cpuRateLimit,proto3,oneof"`
+	xxx_hidden_CpuSetLimit       *string                    `protobuf:"bytes,17,opt,name=cpuSetLimit,proto3,oneof"`
+	xxx_hidden_DataSegmentLimit  bool                       `protobuf:"varint,16,opt,name=dataSegmentLimit,proto3,oneof"`
+	xxx_hidden_AddressSpaceLimit bool                       `protobuf:"varint,19,opt,name=addressSpaceLimit,proto3,oneof"`
+	xxx_hidden_CopyIn            map[string]*Request_File   `protobuf:"bytes,8,rep,name=copyIn,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Symlinks          map[string]string          `protobuf:"bytes,18,rep,name=symlinks,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_CopyOut           *[]*Request_CmdCopyOutFile `protobuf:"bytes,9,rep,name=copyOut,proto3"`
+	xxx_hidden_CopyOutCached     *[]*Request_CmdCopyOutFile `protobuf:"bytes,10,rep,name=copyOutCached,proto3"`
+	xxx_hidden_CopyOutDir        *string                    `protobuf:"bytes,11,opt,name=copyOutDir,proto3,oneof"`
+	xxx_hidden_CopyOutMax        uint64                     `protobuf:"varint,14,opt,name=copyOutMax,proto3,oneof"`
+	xxx_hidden_CopyOutTruncate   bool                       `protobuf:"varint,20,opt,name=copyOutTruncate,proto3,oneof"`
+	xxx_hidden_OutputLimit       uint64                     `protobuf:"varint,21,opt,name=outputLimit,proto3,oneof"`
+	XXX_raceDetectHookData       protoimpl.RaceDetectHookData
+	XXX_presence                 [1]uint32
 	unknownFields                protoimpl.UnknownFields
 	sizeCache                    protoimpl.SizeCache
 }
@@ -876,7 +935,10 @@ func (x *Request_CmdType) GetCpuRateLimit() uint64 {
 
 func (x *Request_CmdType) GetCpuSetLimit() string {
 	if x != nil {
-		return x.xxx_hidden_CpuSetLimit
+		if x.xxx_hidden_CpuSetLimit != nil {
+			return *x.xxx_hidden_CpuSetLimit
+		}
+		return ""
 	}
 	return ""
 }
@@ -927,9 +989,13 @@ func (x *Request_CmdType) GetCopyOutCached() []*Request_CmdCopyOutFile {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in request.proto.
 func (x *Request_CmdType) GetCopyOutDir() string {
 	if x != nil {
-		return x.xxx_hidden_CopyOutDir
+		if x.xxx_hidden_CopyOutDir != nil {
+			return *x.xxx_hidden_CopyOutDir
+		}
+		return ""
 	}
 	return ""
 }
@@ -948,6 +1014,13 @@ func (x *Request_CmdType) GetCopyOutTruncate() bool {
 	return false
 }
 
+func (x *Request_CmdType) GetOutputLimit() uint64 {
+	if x != nil {
+		return x.xxx_hidden_OutputLimit
+	}
+	return 0
+}
+
 func (x *Request_CmdType) SetArgs(v []string) {
 	x.xxx_hidden_Args = v
 }
@@ -962,42 +1035,52 @@ func (x *Request_CmdType) SetFiles(v []*Request_File) {
 
 func (x *Request_CmdType) SetTty(v bool) {
 	x.xxx_hidden_Tty = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 21)
 }
 
 func (x *Request_CmdType) SetCpuTimeLimit(v uint64) {
 	x.xxx_hidden_CpuTimeLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 21)
 }
 
 func (x *Request_CmdType) SetClockTimeLimit(v uint64) {
 	x.xxx_hidden_ClockTimeLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 21)
 }
 
 func (x *Request_CmdType) SetMemoryLimit(v uint64) {
 	x.xxx_hidden_MemoryLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 21)
 }
 
 func (x *Request_CmdType) SetStackLimit(v uint64) {
 	x.xxx_hidden_StackLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 21)
 }
 
 func (x *Request_CmdType) SetProcLimit(v uint64) {
 	x.xxx_hidden_ProcLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 21)
 }
 
 func (x *Request_CmdType) SetCpuRateLimit(v uint64) {
 	x.xxx_hidden_CpuRateLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 21)
 }
 
 func (x *Request_CmdType) SetCpuSetLimit(v string) {
-	x.xxx_hidden_CpuSetLimit = v
+	x.xxx_hidden_CpuSetLimit = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 21)
 }
 
 func (x *Request_CmdType) SetDataSegmentLimit(v bool) {
 	x.xxx_hidden_DataSegmentLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 21)
 }
 
 func (x *Request_CmdType) SetAddressSpaceLimit(v bool) {
 	x.xxx_hidden_AddressSpaceLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 12, 21)
 }
 
 func (x *Request_CmdType) SetCopyIn(v map[string]*Request_File) {
@@ -1016,16 +1099,195 @@ func (x *Request_CmdType) SetCopyOutCached(v []*Request_CmdCopyOutFile) {
 	x.xxx_hidden_CopyOutCached = &v
 }
 
+// Deprecated: Marked as deprecated in request.proto.
 func (x *Request_CmdType) SetCopyOutDir(v string) {
-	x.xxx_hidden_CopyOutDir = v
+	x.xxx_hidden_CopyOutDir = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 17, 21)
 }
 
 func (x *Request_CmdType) SetCopyOutMax(v uint64) {
 	x.xxx_hidden_CopyOutMax = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 18, 21)
 }
 
 func (x *Request_CmdType) SetCopyOutTruncate(v bool) {
 	x.xxx_hidden_CopyOutTruncate = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 19, 21)
+}
+
+func (x *Request_CmdType) SetOutputLimit(v uint64) {
+	x.xxx_hidden_OutputLimit = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 20, 21)
+}
+
+func (x *Request_CmdType) HasTty() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+}
+
+func (x *Request_CmdType) HasCpuTimeLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+}
+
+func (x *Request_CmdType) HasClockTimeLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+}
+
+func (x *Request_CmdType) HasMemoryLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
+}
+
+func (x *Request_CmdType) HasStackLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+}
+
+func (x *Request_CmdType) HasProcLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+}
+
+func (x *Request_CmdType) HasCpuRateLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
+}
+
+func (x *Request_CmdType) HasCpuSetLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
+}
+
+func (x *Request_CmdType) HasDataSegmentLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
+}
+
+func (x *Request_CmdType) HasAddressSpaceLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 12)
+}
+
+// Deprecated: Marked as deprecated in request.proto.
+func (x *Request_CmdType) HasCopyOutDir() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 17)
+}
+
+func (x *Request_CmdType) HasCopyOutMax() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 18)
+}
+
+func (x *Request_CmdType) HasCopyOutTruncate() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 19)
+}
+
+func (x *Request_CmdType) HasOutputLimit() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 20)
+}
+
+func (x *Request_CmdType) ClearTty() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Tty = false
+}
+
+func (x *Request_CmdType) ClearCpuTimeLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_CpuTimeLimit = 0
+}
+
+func (x *Request_CmdType) ClearClockTimeLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_ClockTimeLimit = 0
+}
+
+func (x *Request_CmdType) ClearMemoryLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_MemoryLimit = 0
+}
+
+func (x *Request_CmdType) ClearStackLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_StackLimit = 0
+}
+
+func (x *Request_CmdType) ClearProcLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	x.xxx_hidden_ProcLimit = 0
+}
+
+func (x *Request_CmdType) ClearCpuRateLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	x.xxx_hidden_CpuRateLimit = 0
+}
+
+func (x *Request_CmdType) ClearCpuSetLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	x.xxx_hidden_CpuSetLimit = nil
+}
+
+func (x *Request_CmdType) ClearDataSegmentLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
+	x.xxx_hidden_DataSegmentLimit = false
+}
+
+func (x *Request_CmdType) ClearAddressSpaceLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 12)
+	x.xxx_hidden_AddressSpaceLimit = false
+}
+
+// Deprecated: Marked as deprecated in request.proto.
+func (x *Request_CmdType) ClearCopyOutDir() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 17)
+	x.xxx_hidden_CopyOutDir = nil
+}
+
+func (x *Request_CmdType) ClearCopyOutMax() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 18)
+	x.xxx_hidden_CopyOutMax = 0
+}
+
+func (x *Request_CmdType) ClearCopyOutTruncate() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 19)
+	x.xxx_hidden_CopyOutTruncate = false
+}
+
+func (x *Request_CmdType) ClearOutputLimit() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 20)
+	x.xxx_hidden_OutputLimit = 0
 }
 
 type Request_CmdType_builder struct {
@@ -1034,24 +1296,28 @@ type Request_CmdType_builder struct {
 	Args              []string
 	Env               []string
 	Files             []*Request_File
-	Tty               bool
-	CpuTimeLimit      uint64
-	ClockTimeLimit    uint64
-	MemoryLimit       uint64
-	StackLimit        uint64
-	ProcLimit         uint64
-	CpuRateLimit      uint64
-	CpuSetLimit       string
-	DataSegmentLimit  bool
-	AddressSpaceLimit bool
+	Tty               *bool
+	CpuTimeLimit      *uint64
+	ClockTimeLimit    *uint64
+	MemoryLimit       *uint64
+	StackLimit        *uint64
+	ProcLimit         *uint64
+	CpuRateLimit      *uint64
+	CpuSetLimit       *string
+	DataSegmentLimit  *bool
+	AddressSpaceLimit *bool
 	CopyIn            map[string]*Request_File
 	Symlinks          map[string]string
 	CopyOut           []*Request_CmdCopyOutFile
 	CopyOutCached     []*Request_CmdCopyOutFile
 	// Deprecated: ignored by the executor.
-	CopyOutDir      string
-	CopyOutMax      uint64
-	CopyOutTruncate bool
+	//
+	// Deprecated: Marked as deprecated in request.proto.
+	CopyOutDir      *string
+	CopyOutMax      *uint64
+	CopyOutTruncate *bool
+	// 0 or unset uses the server-wide -output-limit.
+	OutputLimit *uint64
 }
 
 func (b0 Request_CmdType_builder) Build() *Request_CmdType {
@@ -1061,32 +1327,77 @@ func (b0 Request_CmdType_builder) Build() *Request_CmdType {
 	x.xxx_hidden_Args = b.Args
 	x.xxx_hidden_Env = b.Env
 	x.xxx_hidden_Files = &b.Files
-	x.xxx_hidden_Tty = b.Tty
-	x.xxx_hidden_CpuTimeLimit = b.CpuTimeLimit
-	x.xxx_hidden_ClockTimeLimit = b.ClockTimeLimit
-	x.xxx_hidden_MemoryLimit = b.MemoryLimit
-	x.xxx_hidden_StackLimit = b.StackLimit
-	x.xxx_hidden_ProcLimit = b.ProcLimit
-	x.xxx_hidden_CpuRateLimit = b.CpuRateLimit
-	x.xxx_hidden_CpuSetLimit = b.CpuSetLimit
-	x.xxx_hidden_DataSegmentLimit = b.DataSegmentLimit
-	x.xxx_hidden_AddressSpaceLimit = b.AddressSpaceLimit
+	if b.Tty != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 21)
+		x.xxx_hidden_Tty = *b.Tty
+	}
+	if b.CpuTimeLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 21)
+		x.xxx_hidden_CpuTimeLimit = *b.CpuTimeLimit
+	}
+	if b.ClockTimeLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 21)
+		x.xxx_hidden_ClockTimeLimit = *b.ClockTimeLimit
+	}
+	if b.MemoryLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 21)
+		x.xxx_hidden_MemoryLimit = *b.MemoryLimit
+	}
+	if b.StackLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 21)
+		x.xxx_hidden_StackLimit = *b.StackLimit
+	}
+	if b.ProcLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 21)
+		x.xxx_hidden_ProcLimit = *b.ProcLimit
+	}
+	if b.CpuRateLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 21)
+		x.xxx_hidden_CpuRateLimit = *b.CpuRateLimit
+	}
+	if b.CpuSetLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 21)
+		x.xxx_hidden_CpuSetLimit = b.CpuSetLimit
+	}
+	if b.DataSegmentLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 21)
+		x.xxx_hidden_DataSegmentLimit = *b.DataSegmentLimit
+	}
+	if b.AddressSpaceLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 12, 21)
+		x.xxx_hidden_AddressSpaceLimit = *b.AddressSpaceLimit
+	}
 	x.xxx_hidden_CopyIn = b.CopyIn
 	x.xxx_hidden_Symlinks = b.Symlinks
 	x.xxx_hidden_CopyOut = &b.CopyOut
 	x.xxx_hidden_CopyOutCached = &b.CopyOutCached
-	x.xxx_hidden_CopyOutDir = b.CopyOutDir
-	x.xxx_hidden_CopyOutMax = b.CopyOutMax
-	x.xxx_hidden_CopyOutTruncate = b.CopyOutTruncate
+	if b.CopyOutDir != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 17, 21)
+		x.xxx_hidden_CopyOutDir = b.CopyOutDir
+	}
+	if b.CopyOutMax != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 18, 21)
+		x.xxx_hidden_CopyOutMax = *b.CopyOutMax
+	}
+	if b.CopyOutTruncate != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 19, 21)
+		x.xxx_hidden_CopyOutTruncate = *b.CopyOutTruncate
+	}
+	if b.OutputLimit != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 20, 21)
+		x.xxx_hidden_OutputLimit = *b.OutputLimit
+	}
 	return m0
 }
 
 type Request_CmdCopyOutFile struct {
-	state               protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name     string                 `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Optional bool                   `protobuf:"varint,2,opt,name=optional"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Optional    bool                   `protobuf:"varint,2,opt,name=optional,proto3,oneof"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Request_CmdCopyOutFile) Reset() {
@@ -1134,13 +1445,26 @@ func (x *Request_CmdCopyOutFile) SetName(v string) {
 
 func (x *Request_CmdCopyOutFile) SetOptional(v bool) {
 	x.xxx_hidden_Optional = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *Request_CmdCopyOutFile) HasOptional() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *Request_CmdCopyOutFile) ClearOptional() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Optional = false
 }
 
 type Request_CmdCopyOutFile_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Name     string
-	Optional bool
+	Optional *bool
 }
 
 func (b0 Request_CmdCopyOutFile_builder) Build() *Request_CmdCopyOutFile {
@@ -1148,14 +1472,17 @@ func (b0 Request_CmdCopyOutFile_builder) Build() *Request_CmdCopyOutFile {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Optional = b.Optional
+	if b.Optional != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Optional = *b.Optional
+	}
 	return m0
 }
 
 type Request_CmdFdIndex struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Index int32                  `protobuf:"varint,1,opt,name=index"`
-	xxx_hidden_Fd    int32                  `protobuf:"varint,2,opt,name=fd"`
+	xxx_hidden_Index int32                  `protobuf:"varint,1,opt,name=index,proto3"`
+	xxx_hidden_Fd    int32                  `protobuf:"varint,2,opt,name=fd,proto3"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1225,12 +1552,14 @@ func (b0 Request_CmdFdIndex_builder) Build() *Request_CmdFdIndex {
 
 type Request_PipeMap struct {
 	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_In              *Request_CmdFdIndex    `protobuf:"bytes,1,opt,name=in"`
-	xxx_hidden_Out             *Request_CmdFdIndex    `protobuf:"bytes,2,opt,name=out"`
-	xxx_hidden_Proxy           bool                   `protobuf:"varint,3,opt,name=proxy"`
-	xxx_hidden_Name            string                 `protobuf:"bytes,4,opt,name=name"`
-	xxx_hidden_Max             uint64                 `protobuf:"varint,5,opt,name=max"`
-	xxx_hidden_DisableZeroCopy bool                   `protobuf:"varint,6,opt,name=disableZeroCopy"`
+	xxx_hidden_In              *Request_CmdFdIndex    `protobuf:"bytes,1,opt,name=in,proto3"`
+	xxx_hidden_Out             *Request_CmdFdIndex    `protobuf:"bytes,2,opt,name=out,proto3"`
+	xxx_hidden_Proxy           bool                   `protobuf:"varint,3,opt,name=proxy,proto3,oneof"`
+	xxx_hidden_Name            *string                `protobuf:"bytes,4,opt,name=name,proto3,oneof"`
+	xxx_hidden_Max             uint64                 `protobuf:"varint,5,opt,name=max,proto3,oneof"`
+	xxx_hidden_DisableZeroCopy bool                   `protobuf:"varint,6,opt,name=disableZeroCopy,proto3,oneof"`
+	XXX_raceDetectHookData     protoimpl.RaceDetectHookData
+	XXX_presence               [1]uint32
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -1283,7 +1612,10 @@ func (x *Request_PipeMap) GetProxy() bool {
 
 func (x *Request_PipeMap) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
@@ -1312,18 +1644,22 @@ func (x *Request_PipeMap) SetOut(v *Request_CmdFdIndex) {
 
 func (x *Request_PipeMap) SetProxy(v bool) {
 	x.xxx_hidden_Proxy = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *Request_PipeMap) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *Request_PipeMap) SetMax(v uint64) {
 	x.xxx_hidden_Max = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
 }
 
 func (x *Request_PipeMap) SetDisableZeroCopy(v bool) {
 	x.xxx_hidden_DisableZeroCopy = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
 }
 
 func (x *Request_PipeMap) HasIn() bool {
@@ -1340,6 +1676,34 @@ func (x *Request_PipeMap) HasOut() bool {
 	return x.xxx_hidden_Out != nil
 }
 
+func (x *Request_PipeMap) HasProxy() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+}
+
+func (x *Request_PipeMap) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+}
+
+func (x *Request_PipeMap) HasMax() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+}
+
+func (x *Request_PipeMap) HasDisableZeroCopy() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+}
+
 func (x *Request_PipeMap) ClearIn() {
 	x.xxx_hidden_In = nil
 }
@@ -1348,15 +1712,35 @@ func (x *Request_PipeMap) ClearOut() {
 	x.xxx_hidden_Out = nil
 }
 
+func (x *Request_PipeMap) ClearProxy() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Proxy = false
+}
+
+func (x *Request_PipeMap) ClearName() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Name = nil
+}
+
+func (x *Request_PipeMap) ClearMax() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Max = 0
+}
+
+func (x *Request_PipeMap) ClearDisableZeroCopy() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_DisableZeroCopy = false
+}
+
 type Request_PipeMap_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	In              *Request_CmdFdIndex
 	Out             *Request_CmdFdIndex
-	Proxy           bool
-	Name            string
-	Max             uint64
-	DisableZeroCopy bool
+	Proxy           *bool
+	Name            *string
+	Max             *uint64
+	DisableZeroCopy *bool
 }
 
 func (b0 Request_PipeMap_builder) Build() *Request_PipeMap {
@@ -1365,10 +1749,22 @@ func (b0 Request_PipeMap_builder) Build() *Request_PipeMap {
 	_, _ = b, x
 	x.xxx_hidden_In = b.In
 	x.xxx_hidden_Out = b.Out
-	x.xxx_hidden_Proxy = b.Proxy
-	x.xxx_hidden_Name = b.Name
-	x.xxx_hidden_Max = b.Max
-	x.xxx_hidden_DisableZeroCopy = b.DisableZeroCopy
+	if b.Proxy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Proxy = *b.Proxy
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Max != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_Max = *b.Max
+	}
+	if b.DisableZeroCopy != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_DisableZeroCopy = *b.DisableZeroCopy
+	}
 	return m0
 }
 
@@ -1379,8 +1775,8 @@ func (b0 Request_PipeMap_builder) Build() *Request_PipeMap {
 // list must be empty (oneof unset).
 type Request_ShmMap struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Size    uint64                 `protobuf:"varint,1,opt,name=size"`
-	xxx_hidden_Targets *[]*Request_CmdFdIndex `protobuf:"bytes,2,rep,name=targets"`
+	xxx_hidden_Size    uint64                 `protobuf:"varint,1,opt,name=size,proto3"`
+	xxx_hidden_Targets *[]*Request_CmdFdIndex `protobuf:"bytes,2,rep,name=targets,proto3"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1454,9 +1850,9 @@ var File_request_proto protoreflect.FileDescriptor
 
 const file_request_proto_rawDesc = "" +
 	"\n" +
-	"\rrequest.proto\x12\x02pb\x1a\x1bgoogle/protobuf/empty.proto\x1a!google/protobuf/go_features.proto\"\xf8\x0f\n" +
-	"\aRequest\x12\x1c\n" +
-	"\trequestID\x18\x01 \x01(\tR\trequestID\x12%\n" +
+	"\rrequest.proto\x12\x02pb\x1a\x1bgoogle/protobuf/empty.proto\"\xd4\x13\n" +
+	"\aRequest\x12!\n" +
+	"\trequestID\x18\x01 \x01(\tH\x00R\trequestID\x88\x01\x01\x12%\n" +
 	"\x03cmd\x18\x02 \x03(\v2\x13.pb.Request.CmdTypeR\x03cmd\x125\n" +
 	"\vpipeMapping\x18\x03 \x03(\v2\x13.pb.Request.PipeMapR\vpipeMapping\x122\n" +
 	"\n" +
@@ -1466,15 +1862,18 @@ const file_request_proto_rawDesc = "" +
 	"\x03src\x18\x01 \x01(\tR\x03src\x1a&\n" +
 	"\n" +
 	"MemoryFile\x12\x18\n" +
-	"\acontent\x18\x01 \x01(\fR\acontent\x1aB\n" +
+	"\acontent\x18\x01 \x01(\fR\acontent\x1aU\n" +
 	"\n" +
 	"CachedFile\x12\x16\n" +
-	"\x06fileID\x18\x01 \x01(\tR\x06fileID\x12\x1c\n" +
-	"\tforceCopy\x18\x02 \x01(\bR\tforceCopy\x1aI\n" +
+	"\x06fileID\x18\x01 \x01(\tR\x06fileID\x12!\n" +
+	"\tforceCopy\x18\x02 \x01(\bH\x00R\tforceCopy\x88\x01\x01B\f\n" +
+	"\n" +
+	"_forceCopy\x1aW\n" +
 	"\rPipeCollector\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x10\n" +
-	"\x03max\x18\x02 \x01(\x03R\x03max\x12\x12\n" +
-	"\x04pipe\x18\x03 \x01(\bR\x04pipe\x1a\xc0\x02\n" +
+	"\x03max\x18\x02 \x01(\x03R\x03max\x12\x17\n" +
+	"\x04pipe\x18\x03 \x01(\bH\x00R\x04pipe\x88\x01\x01B\a\n" +
+	"\x05_pipe\x1a\xc0\x02\n" +
 	"\x04File\x12-\n" +
 	"\x05local\x18\x01 \x01(\v2\x15.pb.Request.LocalFileH\x00R\x05local\x120\n" +
 	"\x06memory\x18\x02 \x01(\v2\x16.pb.Request.MemoryFileH\x00R\x06memory\x120\n" +
@@ -1482,58 +1881,82 @@ const file_request_proto_rawDesc = "" +
 	"\x04pipe\x18\x04 \x01(\v2\x19.pb.Request.PipeCollectorH\x00R\x04pipe\x124\n" +
 	"\bstreamIn\x18\x05 \x01(\v2\x16.google.protobuf.EmptyH\x00R\bstreamIn\x126\n" +
 	"\tstreamOut\x18\x06 \x01(\v2\x16.google.protobuf.EmptyH\x00R\tstreamOutB\x06\n" +
-	"\x04file\x1a\x99\a\n" +
+	"\x04file\x1a\xec\t\n" +
 	"\aCmdType\x12\x12\n" +
 	"\x04args\x18\x01 \x03(\tR\x04args\x12\x10\n" +
 	"\x03env\x18\x02 \x03(\tR\x03env\x12&\n" +
-	"\x05files\x18\x03 \x03(\v2\x10.pb.Request.FileR\x05files\x12\x10\n" +
-	"\x03tty\x18\r \x01(\bR\x03tty\x12\"\n" +
-	"\fcpuTimeLimit\x18\x04 \x01(\x04R\fcpuTimeLimit\x12&\n" +
-	"\x0eclockTimeLimit\x18\x05 \x01(\x04R\x0eclockTimeLimit\x12 \n" +
-	"\vmemoryLimit\x18\x06 \x01(\x04R\vmemoryLimit\x12\x1e\n" +
+	"\x05files\x18\x03 \x03(\v2\x10.pb.Request.FileR\x05files\x12\x15\n" +
+	"\x03tty\x18\r \x01(\bH\x00R\x03tty\x88\x01\x01\x12'\n" +
+	"\fcpuTimeLimit\x18\x04 \x01(\x04H\x01R\fcpuTimeLimit\x88\x01\x01\x12+\n" +
+	"\x0eclockTimeLimit\x18\x05 \x01(\x04H\x02R\x0eclockTimeLimit\x88\x01\x01\x12%\n" +
+	"\vmemoryLimit\x18\x06 \x01(\x04H\x03R\vmemoryLimit\x88\x01\x01\x12#\n" +
 	"\n" +
-	"stackLimit\x18\f \x01(\x04R\n" +
-	"stackLimit\x12\x1c\n" +
-	"\tprocLimit\x18\a \x01(\x04R\tprocLimit\x12\"\n" +
-	"\fcpuRateLimit\x18\x0f \x01(\x04R\fcpuRateLimit\x12 \n" +
-	"\vcpuSetLimit\x18\x11 \x01(\tR\vcpuSetLimit\x12*\n" +
-	"\x10dataSegmentLimit\x18\x10 \x01(\bR\x10dataSegmentLimit\x12,\n" +
-	"\x11addressSpaceLimit\x18\x13 \x01(\bR\x11addressSpaceLimit\x127\n" +
+	"stackLimit\x18\f \x01(\x04H\x04R\n" +
+	"stackLimit\x88\x01\x01\x12!\n" +
+	"\tprocLimit\x18\a \x01(\x04H\x05R\tprocLimit\x88\x01\x01\x12'\n" +
+	"\fcpuRateLimit\x18\x0f \x01(\x04H\x06R\fcpuRateLimit\x88\x01\x01\x12%\n" +
+	"\vcpuSetLimit\x18\x11 \x01(\tH\aR\vcpuSetLimit\x88\x01\x01\x12/\n" +
+	"\x10dataSegmentLimit\x18\x10 \x01(\bH\bR\x10dataSegmentLimit\x88\x01\x01\x121\n" +
+	"\x11addressSpaceLimit\x18\x13 \x01(\bH\tR\x11addressSpaceLimit\x88\x01\x01\x127\n" +
 	"\x06copyIn\x18\b \x03(\v2\x1f.pb.Request.CmdType.CopyInEntryR\x06copyIn\x12=\n" +
 	"\bsymlinks\x18\x12 \x03(\v2!.pb.Request.CmdType.SymlinksEntryR\bsymlinks\x124\n" +
 	"\acopyOut\x18\t \x03(\v2\x1a.pb.Request.CmdCopyOutFileR\acopyOut\x12@\n" +
 	"\rcopyOutCached\x18\n" +
-	" \x03(\v2\x1a.pb.Request.CmdCopyOutFileR\rcopyOutCached\x12\x1e\n" +
+	" \x03(\v2\x1a.pb.Request.CmdCopyOutFileR\rcopyOutCached\x12'\n" +
 	"\n" +
-	"copyOutDir\x18\v \x01(\tR\n" +
-	"copyOutDir\x12\x1e\n" +
+	"copyOutDir\x18\v \x01(\tB\x02\x18\x01H\n" +
+	"R\n" +
+	"copyOutDir\x88\x01\x01\x12#\n" +
 	"\n" +
-	"copyOutMax\x18\x0e \x01(\x04R\n" +
-	"copyOutMax\x12(\n" +
-	"\x0fcopyOutTruncate\x18\x14 \x01(\bR\x0fcopyOutTruncate\x1aK\n" +
+	"copyOutMax\x18\x0e \x01(\x04H\vR\n" +
+	"copyOutMax\x88\x01\x01\x12-\n" +
+	"\x0fcopyOutTruncate\x18\x14 \x01(\bH\fR\x0fcopyOutTruncate\x88\x01\x01\x12%\n" +
+	"\voutputLimit\x18\x15 \x01(\x04H\rR\voutputLimit\x88\x01\x01\x1aK\n" +
 	"\vCopyInEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12&\n" +
 	"\x05value\x18\x02 \x01(\v2\x10.pb.Request.FileR\x05value:\x028\x01\x1a;\n" +
 	"\rSymlinksEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a@\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x06\n" +
+	"\x04_ttyB\x0f\n" +
+	"\r_cpuTimeLimitB\x11\n" +
+	"\x0f_clockTimeLimitB\x0e\n" +
+	"\f_memoryLimitB\r\n" +
+	"\v_stackLimitB\f\n" +
+	"\n" +
+	"_procLimitB\x0f\n" +
+	"\r_cpuRateLimitB\x0e\n" +
+	"\f_cpuSetLimitB\x13\n" +
+	"\x11_dataSegmentLimitB\x14\n" +
+	"\x12_addressSpaceLimitB\r\n" +
+	"\v_copyOutDirB\r\n" +
+	"\v_copyOutMaxB\x12\n" +
+	"\x10_copyOutTruncateB\x0e\n" +
+	"\f_outputLimit\x1aR\n" +
 	"\x0eCmdCopyOutFile\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
-	"\boptional\x18\x02 \x01(\bR\boptional\x1a2\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
+	"\boptional\x18\x02 \x01(\bH\x00R\boptional\x88\x01\x01B\v\n" +
+	"\t_optional\x1a2\n" +
 	"\n" +
 	"CmdFdIndex\x12\x14\n" +
 	"\x05index\x18\x01 \x01(\x05R\x05index\x12\x0e\n" +
-	"\x02fd\x18\x02 \x01(\x05R\x02fd\x1a\xc1\x01\n" +
+	"\x02fd\x18\x02 \x01(\x05R\x02fd\x1a\x84\x02\n" +
 	"\aPipeMap\x12&\n" +
 	"\x02in\x18\x01 \x01(\v2\x16.pb.Request.CmdFdIndexR\x02in\x12(\n" +
-	"\x03out\x18\x02 \x01(\v2\x16.pb.Request.CmdFdIndexR\x03out\x12\x14\n" +
-	"\x05proxy\x18\x03 \x01(\bR\x05proxy\x12\x12\n" +
-	"\x04name\x18\x04 \x01(\tR\x04name\x12\x10\n" +
-	"\x03max\x18\x05 \x01(\x04R\x03max\x12(\n" +
-	"\x0fdisableZeroCopy\x18\x06 \x01(\bR\x0fdisableZeroCopy\x1aN\n" +
+	"\x03out\x18\x02 \x01(\v2\x16.pb.Request.CmdFdIndexR\x03out\x12\x19\n" +
+	"\x05proxy\x18\x03 \x01(\bH\x00R\x05proxy\x88\x01\x01\x12\x17\n" +
+	"\x04name\x18\x04 \x01(\tH\x01R\x04name\x88\x01\x01\x12\x15\n" +
+	"\x03max\x18\x05 \x01(\x04H\x02R\x03max\x88\x01\x01\x12-\n" +
+	"\x0fdisableZeroCopy\x18\x06 \x01(\bH\x03R\x0fdisableZeroCopy\x88\x01\x01B\b\n" +
+	"\x06_proxyB\a\n" +
+	"\x05_nameB\x06\n" +
+	"\x04_maxB\x12\n" +
+	"\x10_disableZeroCopy\x1aN\n" +
 	"\x06ShmMap\x12\x12\n" +
 	"\x04size\x18\x01 \x01(\x04R\x04size\x120\n" +
-	"\atargets\x18\x02 \x03(\v2\x16.pb.Request.CmdFdIndexR\atargetsB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
+	"\atargets\x18\x02 \x03(\v2\x16.pb.Request.CmdFdIndexR\atargetsB\f\n" +
+	"\n" +
+	"_requestIDB\x1fZ\x1dgithub.com/criyle/go-judge/pbb\x06proto3"
 
 var file_request_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_request_proto_goTypes = []any{
@@ -1583,6 +2006,9 @@ func file_request_proto_init() {
 	if File_request_proto != nil {
 		return
 	}
+	file_request_proto_msgTypes[0].OneofWrappers = []any{}
+	file_request_proto_msgTypes[3].OneofWrappers = []any{}
+	file_request_proto_msgTypes[4].OneofWrappers = []any{}
 	file_request_proto_msgTypes[5].OneofWrappers = []any{
 		(*request_File_Local)(nil),
 		(*request_File_Memory)(nil),
@@ -1591,6 +2017,9 @@ func file_request_proto_init() {
 		(*request_File_StreamIn)(nil),
 		(*request_File_StreamOut)(nil),
 	}
+	file_request_proto_msgTypes[6].OneofWrappers = []any{}
+	file_request_proto_msgTypes[7].OneofWrappers = []any{}
+	file_request_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

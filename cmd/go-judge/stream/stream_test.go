@@ -4,7 +4,9 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
+	"github.com/criyle/go-judge/cmd/go-judge/model"
 	"github.com/criyle/go-judge/envexec"
 	"github.com/criyle/go-judge/worker"
 	"go.uber.org/zap"
@@ -26,6 +28,62 @@ func (*recordingStream) Recv() (*Request, error) {
 	return nil, nil
 }
 
+// cancelOnlyWorker finishes an execution only when its context is cancelled,
+// like a sandboxed process that runs until it is killed.
+type cancelOnlyWorker struct {
+	worker.Worker
+}
+
+func (cancelOnlyWorker) Execute(ctx context.Context, _ *worker.Request) <-chan worker.Response {
+	rtCh := make(chan worker.Response, 1)
+	go func() {
+		<-ctx.Done()
+		rtCh <- worker.Response{Results: []worker.Result{{
+			Status:  envexec.StatusSignalled,
+			FileIDs: map[string]string{"out": "leftover-id"},
+		}}}
+	}()
+	return rtCh
+}
+
+type badInputStream struct {
+	recordingStream
+	mu    sync.Mutex
+	recvs int
+}
+
+func (b *badInputStream) Recv() (*Request, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.recvs++
+	if b.recvs == 1 {
+		return &Request{Request: &model.Request{Cmd: []model.Cmd{{Args: []string{"/bin/true"}}}}}, nil
+	}
+	return &Request{}, nil
+}
+
+func TestStartKillsProcessAndReleasesFilesOnInputError(t *testing.T) {
+	s := &badInputStream{}
+	var removed []string
+	done := make(chan error, 1)
+	go func() {
+		done <- Start(context.Background(), s, cancelOnlyWorker{}, nil, zap.NewNop(), func(id string) {
+			removed = append(removed, id)
+		})
+	}()
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("expected invalid request error")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Start did not cancel the execution after the input error")
+	}
+	if len(removed) != 1 || removed[0] != "leftover-id" {
+		t.Fatalf("removed %v", removed)
+	}
+}
+
 func TestSendLoopDrainsOutputBeforeFinalResponse(t *testing.T) {
 	s := &recordingStream{}
 	outCh := make(chan *OutputResponse)
@@ -40,7 +98,8 @@ func TestSendLoopDrainsOutputBeforeFinalResponse(t *testing.T) {
 	}
 
 	go func() {
-		errCh <- sendLoop(context.Background(), s, outCh, outDone, rtCh, zap.NewNop())
+		_, err := sendLoop(context.Background(), s, outCh, outDone, rtCh, zap.NewNop())
+		errCh <- err
 	}()
 
 	outCh <- &OutputResponse{Index: 0, Fd: 1, Content: []byte("tail")}

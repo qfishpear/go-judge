@@ -40,6 +40,7 @@ func prepareCmdFdTTY(c *Cmd, count int, newStoreFile NewStoreFile) (f []*os.File
 		if err != nil {
 			closeFiles(files...)
 			closeFiles(fTty, fPty)
+			releasePipeCollectors(pipeToCollect)
 		}
 	}()
 
@@ -151,10 +152,7 @@ func prepareCmdFdNoTty(c *Cmd, count int, newFileStore NewStoreFile) (f []*os.Fi
 	defer func() {
 		if err != nil {
 			closeFiles(files...)
-			for _, p := range pipeToCollect {
-				<-p.done
-				p.buffer.Close()
-			}
+			releasePipeCollectors(pipeToCollect)
 			for _, res := range batchMap {
 				if res.writePart != nil {
 					res.writePart.Close()
@@ -324,6 +322,9 @@ func prepareFds(r *Group, newStoreFile NewStoreFile) (f [][]*os.File, p [][]pipe
 			for _, fs := range files {
 				closeFiles(fs...)
 			}
+			for _, pcs := range pipeToCollect {
+				releasePipeCollectors(pcs)
+			}
 		}
 	}()
 
@@ -465,6 +466,25 @@ func pipe(p Pipe, newStoreFile NewStoreFile) (out *os.File, in *os.File, pc *pip
 		return nil, nil, nil, fmt.Errorf("pipe: create: %w", err)
 	}
 	return out, in, nil, nil
+}
+
+func releasePipeCollectors(ptc []pipeCollector) {
+	for _, p := range ptc {
+		if p.done != nil {
+			<-p.done
+		}
+		if p.buffer == nil {
+			continue
+		}
+		name := ""
+		if p.storage {
+			name = p.buffer.Name()
+		}
+		p.buffer.Close()
+		if name != "" {
+			os.Remove(name)
+		}
+	}
 }
 
 func pipe2() (out1 *os.File, in1 *os.File, out2 *os.File, in2 *os.File, err error) {

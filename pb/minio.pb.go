@@ -9,7 +9,6 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/gofeaturespb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -23,8 +22,8 @@ const (
 
 type UploadItem struct {
 	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileId          string                 `protobuf:"bytes,1,opt,name=fileId"`
-	xxx_hidden_PresignedPutUrl string                 `protobuf:"bytes,2,opt,name=presignedPutUrl"`
+	xxx_hidden_FileId          string                 `protobuf:"bytes,1,opt,name=fileId,proto3"`
+	xxx_hidden_PresignedPutUrl string                 `protobuf:"bytes,2,opt,name=presignedPutUrl,proto3"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -94,7 +93,7 @@ func (b0 UploadItem_builder) Build() *UploadItem {
 
 type UploadToMinioRequest struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Items *[]*UploadItem         `protobuf:"bytes,1,rep,name=items"`
+	xxx_hidden_Items *[]*UploadItem         `protobuf:"bytes,1,rep,name=items,proto3"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -153,7 +152,7 @@ func (b0 UploadToMinioRequest_builder) Build() *UploadToMinioRequest {
 
 type DownloadFromMinioRequest struct {
 	state                       protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_PresignedGetUrls []string               `protobuf:"bytes,1,rep,name=presignedGetUrls"`
+	xxx_hidden_PresignedGetUrls []string               `protobuf:"bytes,1,rep,name=presignedGetUrls,proto3"`
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -210,7 +209,7 @@ func (b0 DownloadFromMinioRequest_builder) Build() *DownloadFromMinioRequest {
 
 type DownloadFromMinioResponse struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileIds []string               `protobuf:"bytes,1,rep,name=fileIds"`
+	xxx_hidden_FileIds []string               `protobuf:"bytes,1,rep,name=fileIds,proto3"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -269,7 +268,7 @@ var File_minio_proto protoreflect.FileDescriptor
 
 const file_minio_proto_rawDesc = "" +
 	"\n" +
-	"\vminio.proto\x12\x02pb\x1a!google/protobuf/go_features.proto\"N\n" +
+	"\vminio.proto\x12\x02pb\"N\n" +
 	"\n" +
 	"UploadItem\x12\x16\n" +
 	"\x06fileId\x18\x01 \x01(\tR\x06fileId\x12(\n" +
@@ -279,7 +278,7 @@ const file_minio_proto_rawDesc = "" +
 	"\x18DownloadFromMinioRequest\x12*\n" +
 	"\x10presignedGetUrls\x18\x01 \x03(\tR\x10presignedGetUrls\"5\n" +
 	"\x19DownloadFromMinioResponse\x12\x18\n" +
-	"\afileIds\x18\x01 \x03(\tR\afileIdsB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
+	"\afileIds\x18\x01 \x03(\tR\afileIdsB\x1fZ\x1dgithub.com/criyle/go-judge/pbb\x06proto3"
 
 var file_minio_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_minio_proto_goTypes = []any{

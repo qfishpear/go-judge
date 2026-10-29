@@ -7,6 +7,7 @@ import (
 	"github.com/criyle/go-judge/envexec"
 	"github.com/criyle/go-judge/pb"
 	"github.com/criyle/go-judge/worker"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestConvertPBFileErrorType(t *testing.T) {
@@ -42,8 +43,8 @@ func TestConvertPBStreamRequestShmMapping(t *testing.T) {
 		Cmd: []*pb.Request_CmdType{
 			pb.Request_CmdType_builder{
 				Args:            []string{"/bin/true"},
-				CopyOutTruncate: true,
-				CopyOutMax:      10,
+				CopyOutTruncate: proto.Bool(true),
+				CopyOutMax:      proto.Uint64(10),
 			}.Build(),
 			pb.Request_CmdType_builder{Args: []string{"/bin/true"}}.Build(),
 		},
@@ -91,7 +92,7 @@ func TestConvertPBCachedFilePreservesForceCopy(t *testing.T) {
 	file := pb.Request_File_builder{
 		Cached: pb.Request_CachedFile_builder{
 			FileID:    "ABCDEFGH",
-			ForceCopy: true,
+			ForceCopy: proto.Bool(true),
 		}.Build(),
 	}.Build()
 

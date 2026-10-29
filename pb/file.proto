@@ -1,24 +1,21 @@
-edition = "2023";
+syntax = "proto3";
 
 package pb;
-import "google/protobuf/go_features.proto";
 
-option features.field_presence = IMPLICIT;
 option go_package = "github.com/criyle/go-judge/pb";
-option features.(pb.go).api_level = API_OPAQUE;
 
 message FileID { string fileID = 1; }
 
 message FileGetRequest {
   message FileGetRequestItem{
     string fileID = 1;
-    uint64 truncateLength = 2;
+    optional uint64 truncateLength = 2;
   }
   repeated FileGetRequestItem items = 1;
 }
 
 message FileAddRequest {
-  string name = 1;
+  optional string name = 1;
   bytes content = 2;
 }
 
@@ -41,6 +38,6 @@ message FileDeleteRequest {
 
 // FileContent is the chunk type for FileGetStream and FileAddStream.
 message FileContent {
-  string name = 1;
+  optional string name = 1;
   bytes content = 2;
 }

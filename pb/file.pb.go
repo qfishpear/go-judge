@@ -9,7 +9,6 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/gofeaturespb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -23,7 +22,7 @@ const (
 
 type FileID struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileID string                 `protobuf:"bytes,1,opt,name=fileID"`
+	xxx_hidden_FileID string                 `protobuf:"bytes,1,opt,name=fileID,proto3"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -80,7 +79,7 @@ func (b0 FileID_builder) Build() *FileID {
 
 type FileGetRequest struct {
 	state            protoimpl.MessageState                `protogen:"opaque.v1"`
-	xxx_hidden_Items *[]*FileGetRequest_FileGetRequestItem `protobuf:"bytes,1,rep,name=items"`
+	xxx_hidden_Items *[]*FileGetRequest_FileGetRequestItem `protobuf:"bytes,1,rep,name=items,proto3"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -138,11 +137,13 @@ func (b0 FileGetRequest_builder) Build() *FileGetRequest {
 }
 
 type FileAddRequest struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name,proto3,oneof"`
+	xxx_hidden_Content     []byte                 `protobuf:"bytes,2,opt,name=content,proto3"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FileAddRequest) Reset() {
@@ -172,7 +173,10 @@ func (x *FileAddRequest) ProtoReflect() protoreflect.Message {
 
 func (x *FileAddRequest) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
@@ -185,7 +189,8 @@ func (x *FileAddRequest) GetContent() []byte {
 }
 
 func (x *FileAddRequest) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *FileAddRequest) SetContent(v []byte) {
@@ -195,10 +200,22 @@ func (x *FileAddRequest) SetContent(v []byte) {
 	x.xxx_hidden_Content = v
 }
 
+func (x *FileAddRequest) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *FileAddRequest) ClearName() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
+}
+
 type FileAddRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name    string
+	Name    *string
 	Content []byte
 }
 
@@ -206,14 +223,17 @@ func (b0 FileAddRequest_builder) Build() *FileAddRequest {
 	m0 := &FileAddRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	x.xxx_hidden_Content = b.Content
 	return m0
 }
 
 type FileGetResponse struct {
 	state               protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Contents *[]*FileGetResponse_FileContent `protobuf:"bytes,1,rep,name=contents"`
+	xxx_hidden_Contents *[]*FileGetResponse_FileContent `protobuf:"bytes,1,rep,name=contents,proto3"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -272,7 +292,7 @@ func (b0 FileGetResponse_builder) Build() *FileGetResponse {
 
 type FileListResponse struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileIDs map[string]string      `protobuf:"bytes,1,rep,name=fileIDs" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_FileIDs map[string]string      `protobuf:"bytes,1,rep,name=fileIDs,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -329,7 +349,7 @@ func (b0 FileListResponse_builder) Build() *FileListResponse {
 
 type FileDeleteRequest struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileIDs []string               `protobuf:"bytes,1,rep,name=fileIDs"`
+	xxx_hidden_FileIDs []string               `protobuf:"bytes,1,rep,name=fileIDs,proto3"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -386,11 +406,13 @@ func (b0 FileDeleteRequest_builder) Build() *FileDeleteRequest {
 
 // FileContent is the chunk type for FileGetStream and FileAddStream.
 type FileContent struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Name    string                 `protobuf:"bytes,1,opt,name=name"`
-	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,1,opt,name=name,proto3,oneof"`
+	xxx_hidden_Content     []byte                 `protobuf:"bytes,2,opt,name=content,proto3"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *FileContent) Reset() {
@@ -420,7 +442,10 @@ func (x *FileContent) ProtoReflect() protoreflect.Message {
 
 func (x *FileContent) GetName() string {
 	if x != nil {
-		return x.xxx_hidden_Name
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
 	}
 	return ""
 }
@@ -433,7 +458,8 @@ func (x *FileContent) GetContent() []byte {
 }
 
 func (x *FileContent) SetName(v string) {
-	x.xxx_hidden_Name = v
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 2)
 }
 
 func (x *FileContent) SetContent(v []byte) {
@@ -443,10 +469,22 @@ func (x *FileContent) SetContent(v []byte) {
 	x.xxx_hidden_Content = v
 }
 
+func (x *FileContent) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+}
+
+func (x *FileContent) ClearName() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	x.xxx_hidden_Name = nil
+}
+
 type FileContent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name    string
+	Name    *string
 	Content []byte
 }
 
@@ -454,15 +492,20 @@ func (b0 FileContent_builder) Build() *FileContent {
 	m0 := &FileContent{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Name = b.Name
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 2)
+		x.xxx_hidden_Name = b.Name
+	}
 	x.xxx_hidden_Content = b.Content
 	return m0
 }
 
 type FileGetRequest_FileGetRequestItem struct {
 	state                     protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileID         string                 `protobuf:"bytes,1,opt,name=fileID"`
-	xxx_hidden_TruncateLength uint64                 `protobuf:"varint,2,opt,name=truncateLength"`
+	xxx_hidden_FileID         string                 `protobuf:"bytes,1,opt,name=fileID,proto3"`
+	xxx_hidden_TruncateLength uint64                 `protobuf:"varint,2,opt,name=truncateLength,proto3,oneof"`
+	XXX_raceDetectHookData    protoimpl.RaceDetectHookData
+	XXX_presence              [1]uint32
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -512,13 +555,26 @@ func (x *FileGetRequest_FileGetRequestItem) SetFileID(v string) {
 
 func (x *FileGetRequest_FileGetRequestItem) SetTruncateLength(v uint64) {
 	x.xxx_hidden_TruncateLength = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *FileGetRequest_FileGetRequestItem) HasTruncateLength() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *FileGetRequest_FileGetRequestItem) ClearTruncateLength() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_TruncateLength = 0
 }
 
 type FileGetRequest_FileGetRequestItem_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	FileID         string
-	TruncateLength uint64
+	TruncateLength *uint64
 }
 
 func (b0 FileGetRequest_FileGetRequestItem_builder) Build() *FileGetRequest_FileGetRequestItem {
@@ -526,15 +582,18 @@ func (b0 FileGetRequest_FileGetRequestItem_builder) Build() *FileGetRequest_File
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_FileID = b.FileID
-	x.xxx_hidden_TruncateLength = b.TruncateLength
+	if b.TruncateLength != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_TruncateLength = *b.TruncateLength
+	}
 	return m0
 }
 
 type FileGetResponse_FileContent struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_FileId  string                 `protobuf:"bytes,1,opt,name=fileId"`
-	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content"`
-	xxx_hidden_Length  uint64                 `protobuf:"varint,3,opt,name=length"`
+	xxx_hidden_FileId  string                 `protobuf:"bytes,1,opt,name=fileId,proto3"`
+	xxx_hidden_Content []byte                 `protobuf:"bytes,2,opt,name=content,proto3"`
+	xxx_hidden_Length  uint64                 `protobuf:"varint,3,opt,name=length,proto3"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -623,17 +682,19 @@ var File_file_proto protoreflect.FileDescriptor
 const file_file_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"file.proto\x12\x02pb\x1a!google/protobuf/go_features.proto\" \n" +
+	"file.proto\x12\x02pb\" \n" +
 	"\x06FileID\x12\x16\n" +
-	"\x06fileID\x18\x01 \x01(\tR\x06fileID\"\xa3\x01\n" +
+	"\x06fileID\x18\x01 \x01(\tR\x06fileID\"\xbb\x01\n" +
 	"\x0eFileGetRequest\x12;\n" +
-	"\x05items\x18\x01 \x03(\v2%.pb.FileGetRequest.FileGetRequestItemR\x05items\x1aT\n" +
+	"\x05items\x18\x01 \x03(\v2%.pb.FileGetRequest.FileGetRequestItemR\x05items\x1al\n" +
 	"\x12FileGetRequestItem\x12\x16\n" +
-	"\x06fileID\x18\x01 \x01(\tR\x06fileID\x12&\n" +
-	"\x0etruncateLength\x18\x02 \x01(\x04R\x0etruncateLength\">\n" +
-	"\x0eFileAddRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"\xa7\x01\n" +
+	"\x06fileID\x18\x01 \x01(\tR\x06fileID\x12+\n" +
+	"\x0etruncateLength\x18\x02 \x01(\x04H\x00R\x0etruncateLength\x88\x01\x01B\x11\n" +
+	"\x0f_truncateLength\"L\n" +
+	"\x0eFileAddRequest\x12\x17\n" +
+	"\x04name\x18\x01 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\fR\acontentB\a\n" +
+	"\x05_name\"\xa7\x01\n" +
 	"\x0fFileGetResponse\x12;\n" +
 	"\bcontents\x18\x01 \x03(\v2\x1f.pb.FileGetResponse.FileContentR\bcontents\x1aW\n" +
 	"\vFileContent\x12\x16\n" +
@@ -646,10 +707,11 @@ const file_file_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"-\n" +
 	"\x11FileDeleteRequest\x12\x18\n" +
-	"\afileIDs\x18\x01 \x03(\tR\afileIDs\";\n" +
-	"\vFileContent\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontentB)Z\x1dgithub.com/criyle/go-judge/pb\x92\x03\a\xd2>\x02\x10\x03\b\x02b\beditionsp\xe8\a"
+	"\afileIDs\x18\x01 \x03(\tR\afileIDs\"I\n" +
+	"\vFileContent\x12\x17\n" +
+	"\x04name\x18\x01 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\fR\acontentB\a\n" +
+	"\x05_nameB\x1fZ\x1dgithub.com/criyle/go-judge/pbb\x06proto3"
 
 var file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_file_proto_goTypes = []any{
@@ -680,6 +742,9 @@ func file_file_proto_init() {
 	if File_file_proto != nil {
 		return
 	}
+	file_file_proto_msgTypes[2].OneofWrappers = []any{}
+	file_file_proto_msgTypes[6].OneofWrappers = []any{}
+	file_file_proto_msgTypes[7].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

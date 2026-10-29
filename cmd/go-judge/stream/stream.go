@@ -67,8 +67,10 @@ var (
 	errFirstMustBeExec = errors.New("the first stream request must be exec request")
 )
 
-// Start initiate a interactive execution on the worker and transmit the request and response over Stream transport layer
-func Start(baseCtx context.Context, s Stream, w worker.Worker, srcPrefix []string, logger *zap.Logger) error {
+// Start initiates an interactive execution and transmits the request and
+// response over the Stream transport layer. When the final response is not
+// delivered, the store files it references are deleted through removeID.
+func Start(baseCtx context.Context, s Stream, w worker.Worker, srcPrefix []string, logger *zap.Logger, removeID func(string)) error {
 	req, err := s.Recv()
 	if err != nil {
 		return err
@@ -135,33 +137,50 @@ func Start(baseCtx context.Context, s Stream, w worker.Worker, srcPrefix []strin
 	}
 
 	rtCh := w.Execute(execCtx, rq)
-	err = sendLoop(ctx, s, outCh, outDone, rtCh, logger)
+	received, err := sendLoop(ctx, s, outCh, outDone, rtCh, logger)
 
+	// Kill the process before waiting for the worker: streamOutput stops
+	// reading once ctx is cancelled, so a live process could block on a full
+	// stdout pipe until its clock limit.
+	execCancel()
 	cancel()
 	closeFunc()
+	if err != nil {
+		if received == nil {
+			rt := <-rtCh
+			received = &rt
+		}
+		model.ReleaseResponse(*received, removeID)
+	}
 	err2 := wg.Wait()
 	return errors.Join(err, err2)
 }
 
-func sendLoop(ctx context.Context, s Stream, outCh <-chan *OutputResponse, outDone <-chan error, rtCh <-chan worker.Response, logger *zap.Logger) error {
+// sendLoop forwards output and then the final response. It returns the worker
+// response if one was received (nil otherwise); err != nil means the final
+// response was not delivered.
+func sendLoop(ctx context.Context, s Stream, outCh <-chan *OutputResponse, outDone <-chan error, rtCh <-chan worker.Response, logger *zap.Logger) (*worker.Response, error) {
 	var (
 		outClosed    bool
-		resultReady  bool
+		received     *worker.Response
 		resultSend   *model.Response
 		streamOutErr error
 	)
 
 	for {
-		if outClosed && resultReady {
+		if outClosed && resultSend != nil {
 			if streamOutErr != nil {
-				return streamOutErr
+				return received, streamOutErr
 			}
-			return s.Send(Response{Response: resultSend})
+			if err := s.Send(Response{Response: resultSend}); err != nil {
+				return received, fmt.Errorf("send response: %w", err)
+			}
+			return received, nil
 		}
 
 		select {
-		case <-ctx.Done(): // error occur
-			return ctx.Err()
+		case <-ctx.Done():
+			return received, ctx.Err()
 
 		case o, ok := <-outCh:
 			if !ok {
@@ -173,20 +192,20 @@ func sendLoop(ctx context.Context, s Stream, outCh <-chan *OutputResponse, outDo
 			}
 			err := s.Send(Response{Output: o})
 			if err != nil {
-				return fmt.Errorf("send output: %w", err)
+				return received, fmt.Errorf("send output: %w", err)
 			}
 
 		case rt := <-rtCh:
+			received = &rt
+			rtCh = nil
 			if ce := logger.Check(zap.DebugLevel, "response"); ce != nil {
 				ce.Write(zap.String("body", fmt.Sprintf("%+v", rt)))
 			}
 			ret, err := model.ConvertResponse(rt, false)
 			if err != nil {
-				return fmt.Errorf("convert response: %w", err)
+				return received, fmt.Errorf("convert response: %w", err)
 			}
-			resultReady = true
-			resultSend = &model.Response{Results: ret.Results}
-			rtCh = nil
+			resultSend = &ret
 		}
 	}
 }

@@ -43,7 +43,11 @@ func newPipeBuffer(limit Size, newFile NewStoreFile) (*pipeBuffer, error) {
 	}
 	done, w, err := newPipe(buffer, limit+1)
 	if err != nil {
+		name := buffer.Name()
 		buffer.Close()
+		if name != "" {
+			os.Remove(name)
+		}
 		return nil, err
 	}
 	return &pipeBuffer{
