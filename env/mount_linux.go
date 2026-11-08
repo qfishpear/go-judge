@@ -11,13 +11,17 @@ import (
 )
 
 // Mount defines single mount point configuration.
-// type could be bind / tmpfs
+// type could be bind / tmpfs / instanceBind.
+// instanceBind is a per-container writable directory under Source, mounted at Target.
+// quota and inodes (for example "8g", "4k") are user-quota limits for that container's host uid.
 type Mount struct {
 	Type     string `yaml:"type"`
 	Source   string `yaml:"source"`
 	Target   string `yaml:"target"`
 	Readonly bool   `yaml:"readonly"`
 	Data     string `yaml:"data"`
+	Quota    string `yaml:"quota"`
+	Inodes   string `yaml:"inodes"`
 }
 
 // Link defines symlinks to be created after mounts
@@ -53,19 +57,21 @@ func readMountConfig(p string) (*Mounts, error) {
 	return &m, nil
 }
 
-func parseMountConfig(m *Mounts) (*mount.Builder, error) {
+func parseMountConfig(m *Mounts) (*mount.Builder, []instanceBindSpec, error) {
 	b := mount.NewBuilder()
 	wd, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	var binds []instanceBindSpec
+	seenTarget := map[string]struct{}{}
 	for _, mt := range m.Mount {
 		target := mt.Target
 		if filepath.IsAbs(target) {
 			target = filepath.Clean(target[1:])
 		}
 		source := mt.Source
-		if !filepath.IsAbs(source) {
+		if source != "" && !filepath.IsAbs(source) {
 			source = filepath.Join(wd, source)
 		}
 		switch mt.Type {
@@ -73,14 +79,38 @@ func parseMountConfig(m *Mounts) (*mount.Builder, error) {
 			b.WithBind(source, target, mt.Readonly)
 		case "tmpfs":
 			b.WithTmpfs(target, mt.Data)
+		case "instanceBind":
+			if _, ok := seenTarget[target]; ok {
+				return nil, nil, fmt.Errorf("duplicate instanceBind target %q", target)
+			}
+			seenTarget[target] = struct{}{}
+			quotaBytes, err := parseByteSize(mt.Quota)
+			if err != nil || quotaBytes == 0 {
+				return nil, nil, fmt.Errorf("instanceBind %q: quota must be a size like 8g", target)
+			}
+			inodes, err := parseByteSize(mt.Inodes)
+			if err != nil || inodes == 0 {
+				return nil, nil, fmt.Errorf("instanceBind %q: inodes must be a count like 4k", target)
+			}
+			if source == "" {
+				return nil, nil, fmt.Errorf("instanceBind %q: source is required", target)
+			}
+			// Placeholder bind so the mount list has a slot. Each container replaces Source.
+			b.WithBind(source, target, false)
+			binds = append(binds, instanceBindSpec{
+				Source:     source,
+				Target:     target,
+				QuotaBytes: quotaBytes,
+				Inodes:     inodes,
+			})
 		default:
-			return nil, fmt.Errorf("invalid_mount_type: %v", mt.Type)
+			return nil, nil, fmt.Errorf("invalid_mount_type: %v", mt.Type)
 		}
 	}
 	if m.Proc {
 		b.WithProcRW(m.ProcRW)
 	}
-	return b, nil
+	return b, binds, nil
 }
 
 func getDefaultMount(tmpFsConf string) *mount.Builder {

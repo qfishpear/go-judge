@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync/atomic"
+	"sync"
 	"syscall"
 
 	"github.com/criyle/go-judge/env/linuxcontainer"
@@ -29,7 +29,11 @@ const (
 
 // NewBuilder build a environment builder
 func NewBuilder(c Config, logger *zap.Logger) (pool.EnvBuilder, map[string]any, error) {
-	mountsConfig, mountBuilder, symbolicLinks, maskPaths, err := prepareMountAndPaths(c, logger)
+	mountsConfig, mountBuilder, symbolicLinks, maskPaths, instanceBinds, err := prepareMountAndPaths(c, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+	instanceBinds, err = prepareInstanceBinds(instanceBinds)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -41,7 +45,10 @@ func NewBuilder(c Config, logger *zap.Logger) (pool.EnvBuilder, map[string]any, 
 		return nil, nil, err
 	}
 	unshareFlags, unshareCgroup := prepareUnshareFlags(c, logger)
-	credGen := prepareCredGen(c)
+	credGen := prepareCredGen(c, instanceBinds)
+	if len(instanceBinds) > 0 && credGen == nil {
+		return nil, nil, fmt.Errorf("instanceBind requires -container-cred-start > 0 so each container has its own uid")
+	}
 	hostName, domainName, workDir, cUID, cGID, initCmd, err := prepareContainerMeta(mountsConfig, logger)
 	if err != nil {
 		return nil, nil, err
@@ -88,13 +95,18 @@ func NewBuilder(c Config, logger *zap.Logger) (pool.EnvBuilder, map[string]any, 
 		"cgroupControllers": cgroupControllers,
 	}
 
-	if tryClone3Builder := tryClone3(c, b, cgb, cgroupType, cgroupPool, workDir, seccomp, logger); tryClone3Builder != nil {
+	var envBuilder linuxcontainer.EnvironmentBuilder = b
+	if credGen != nil || len(instanceBinds) > 0 {
+		envBuilder = newTrackingBuilder(b, credGen, instanceBinds)
+	}
+
+	if tryClone3Builder := tryClone3(c, envBuilder, cgb, cgroupType, cgroupPool, workDir, seccomp, logger); tryClone3Builder != nil {
 		conf["clone3"] = true
 		return tryClone3Builder, conf, nil
 	}
 
 	return linuxcontainer.NewEnvBuilder(linuxcontainer.Config{
-		Builder:    b,
+		Builder:    envBuilder,
 		CgroupPool: cgroupPool,
 		WorkDir:    workDir,
 		CPURate:    c.EnableCPURate,
@@ -108,20 +120,20 @@ func appendCopyInMount(builder *mount.Builder, stagingDir string) {
 	}
 }
 
-func prepareMountAndPaths(c Config, logger *zap.Logger) (*Mounts, *mount.Builder, []container.SymbolicLink, []string, error) {
+func prepareMountAndPaths(c Config, logger *zap.Logger) (*Mounts, *mount.Builder, []container.SymbolicLink, []string, []instanceBindSpec, error) {
 	mc, err := readMountConfig(c.MountConf)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			logger.Error("failed to read mount config", zap.String("path", c.MountConf), zap.Error(err))
-			return nil, nil, nil, nil, err
+			return nil, nil, nil, nil, nil, err
 		}
 		logger.Info("mount.yaml does not exist, using default container mount", zap.String("path", c.MountConf))
-		return nil, getDefaultMount(c.TmpFsParam), defaultSymLinks, defaultMaskPaths, nil
+		return nil, getDefaultMount(c.TmpFsParam), defaultSymLinks, defaultMaskPaths, nil, nil
 	}
-	mountBuilder, err := parseMountConfig(mc)
+	mountBuilder, instanceBinds, err := parseMountConfig(mc)
 	if err != nil {
 		logger.Error("failed to parse mount config", zap.Error(err))
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 	var symbolicLinks []container.SymbolicLink
 	if len(mc.SymLinks) > 0 {
@@ -137,7 +149,7 @@ func prepareMountAndPaths(c Config, logger *zap.Logger) (*Mounts, *mount.Builder
 		maskPaths = mc.MaskPaths
 	}
 	logger.Info("created container mount", zap.Any("mountBuilder", mountBuilder))
-	return mc, mountBuilder, symbolicLinks, maskPaths, nil
+	return mc, mountBuilder, symbolicLinks, maskPaths, instanceBinds, nil
 }
 
 func prepareSeccomp(c Config, logger *zap.Logger) ([]syscall.SockFilter, error) {
@@ -175,9 +187,9 @@ func prepareUnshareFlags(c Config, logger *zap.Logger) (uintptr, bool) {
 	return unshareFlags, unshareCgroup
 }
 
-func prepareCredGen(c Config) container.CredGenerator {
+func prepareCredGen(c Config, binds []instanceBindSpec) *credGen {
 	if os.Getuid() == 0 && c.ContainerCredStart > 0 {
-		return newCredGen(uint32(c.ContainerCredStart))
+		return newCredGen(uint32(c.ContainerCredStart), binds)
 	}
 	return nil
 }
@@ -279,21 +291,62 @@ func kernelVersionAtLeast(major, minor, requiredMajor, requiredMinor int) bool {
 }
 
 type credGen struct {
-	cur atomic.Uint32
+	mu             sync.Mutex
+	start          uint32
+	next           uint32
+	inUse          map[uint32]struct{}
+	outstanding    uint32
+	hasOutstanding bool
+	binds          []instanceBindSpec
 }
 
-func newCredGen(start uint32) *credGen {
-	rt := &credGen{}
-	rt.cur.Store(start)
-	return rt
+func newCredGen(start uint32, binds []instanceBindSpec) *credGen {
+	return &credGen{
+		start: start,
+		inUse: map[uint32]struct{}{},
+		binds: binds,
+	}
 }
 
 func (c *credGen) Get() syscall.Credential {
-	n := c.cur.Add(1)
-	return syscall.Credential{
-		Uid: n,
-		Gid: n,
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if len(c.inUse) >= credUIDSpan {
+		panic(fmt.Sprintf("container uid space [%d, %d) is exhausted", c.start, c.start+credUIDSpan))
 	}
+	var uid uint32
+	for {
+		uid = c.start + c.next
+		c.next = (c.next + 1) % credUIDSpan
+		if _, used := c.inUse[uid]; !used {
+			break
+		}
+	}
+	c.inUse[uid] = struct{}{}
+	if err := c.applyQuota(uid); err != nil {
+		delete(c.inUse, uid)
+		panic(fmt.Errorf("set user quota for uid %d: %w", uid, err))
+	}
+	c.outstanding = uid
+	c.hasOutstanding = true
+	return syscall.Credential{Uid: uid, Gid: uid}
+}
+
+func (c *credGen) takeOutstanding() (uint32, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if !c.hasOutstanding {
+		return 0, false
+	}
+	c.hasOutstanding = false
+	return c.outstanding, true
+}
+
+func (c *credGen) release(uid uint32) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.inUse, uid)
 }
 
 func kernelVersion() (major int, minor int) {

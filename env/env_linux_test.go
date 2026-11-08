@@ -35,7 +35,7 @@ func TestKernelVersionAtLeast(t *testing.T) {
 
 func TestPrepareMountAndPathsAddsReadOnlyCopyInStaging(t *testing.T) {
 	staging := t.TempDir()
-	_, builder, _, _, err := prepareMountAndPaths(Config{
+	_, builder, _, _, _, err := prepareMountAndPaths(Config{
 		MountConf:        filepath.Join(t.TempDir(), "missing.yaml"),
 		CopyInStagingDir: staging,
 	}, zap.NewNop())
