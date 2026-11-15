@@ -74,7 +74,8 @@ func main() {
 	b, builderParam := newEnvBuilder(conf, copyInStagingDir)
 	envPool := newEnvPool(b, conf.EnableMetrics)
 	prefork(envPool, conf.PreFork)
-	work := newWorker(conf, envPool, fs, copyInStagingDir)
+	containerWorkDir, _ := builderParam["workDir"].(string)
+	work := newWorker(conf, envPool, fs, copyInStagingDir, containerWorkDir)
 	work.Start()
 	logger.Info("Worker stated ",
 		zap.Int("parallelism", conf.Parallelism),
@@ -349,7 +350,7 @@ func initHTTPMux(conf *config.Config, work worker.Worker, fs filestore.FileStore
 	}
 
 	// Rest Handle
-	cmdHandle := restexecutor.NewCmdHandle(work, conf.SrcPrefix, logger)
+	cmdHandle := restexecutor.NewCmdHandle(work, conf.SrcPrefix, logger, func(id string) { fs.Remove(id) })
 	cmdHandle.Register(r)
 	fileHandle := restexecutor.NewFileHandle(fs)
 	fileHandle.Register(r)
@@ -731,7 +732,7 @@ func newEnvPool(b pool.EnvBuilder, enableMetrics bool) worker.EnvironmentPool {
 	return p
 }
 
-func newWorker(conf *config.Config, envPool worker.EnvironmentPool, fs filestore.FileStore, copyInStagingDir string) worker.Worker {
+func newWorker(conf *config.Config, envPool worker.EnvironmentPool, fs filestore.FileStore, copyInStagingDir, containerWorkDir string) worker.Worker {
 	w := worker.New(worker.Config{
 		FileStore:             fs,
 		EnvironmentPool:       envPool,
@@ -746,6 +747,7 @@ func newWorker(conf *config.Config, envPool worker.EnvironmentPool, fs filestore
 		ShmMaxSize:            *conf.ShmMaxSize,
 		ExecObserver:          execObserve,
 		CPUSets:               conf.Cpuset,
+		ContainerWorkDir:      containerWorkDir,
 	})
 	if conf.EnableMetrics {
 		w = newMetricsWorker(w)

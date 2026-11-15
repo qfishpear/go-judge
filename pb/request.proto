@@ -64,6 +64,23 @@ message Request {
     optional bool copyOutTruncate = 20;
     // 0 or unset uses the server-wide -output-limit.
     optional uint64 outputLimit = 21;
+
+    // Present to diff /w after this command finishes.
+    // optional keeps the generated TypeScript property optional. A plain proto3
+    // message field is still absent by default, but ts-proto then requires every
+    // command literal to set workspaceDiff.
+    optional WorkspaceDiff workspaceDiff = 22;
+  }
+
+  // WorkspaceDiff asks for a post-run diff of regular files under /w.
+  message WorkspaceDiff {
+    // maxFileCount counts regular files only, including ones whose content did not change.
+    // Directories and skipped entries do not count. Exceeding it discards the diff.
+    // maxTotalSize is the sum of regular-file st_size. Exceeding it discards the diff.
+    uint32 maxFileCount = 1;
+    uint64 maxTotalSize = 2;
+    // At most this many skipped entries are returned; the rest are only counted.
+    uint32 maxSkipped = 3;
   }
 
   message CmdCopyOutFile {

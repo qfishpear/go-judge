@@ -137,6 +137,7 @@ func (c *environ) Open(params []envexec.OpenParam) ([]envexec.OpenResult, error)
 			Flag:     p.Flag,
 			Perm:     p.Perm,
 			MkdirAll: p.MkdirAll,
+			OpenDir:  p.OpenDir,
 		})
 	}
 	rt, err := c.Environment.Open(openCmd)

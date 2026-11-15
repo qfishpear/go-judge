@@ -25,6 +25,11 @@ type Cmd struct {
 	// symbolic link to be created before exec
 	SymLinks map[string]string
 
+	// AfterCopyIn runs after copyIn and symlink succeed and before the process
+	// starts. A non-nil error skips the process. Only Single.Run calls it;
+	// Group.Run ignores a non-nil hook.
+	AfterCopyIn func(context.Context, Environment) error
+
 	// exec argument, environment
 	Args []string
 	Env  []string

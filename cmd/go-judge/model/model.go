@@ -61,6 +61,8 @@ type Cmd struct {
 	StrictMemoryLimit bool `json:"strictMemoryLimit"`
 	DataSegmentLimit  bool `json:"dataSegmentLimit"`
 	AddressSpaceLimit bool `json:"addressSpaceLimit"`
+
+	WorkspaceDiff *WorkspaceDiff `json:"workspaceDiff,omitempty"`
 }
 
 // CmdFdIndex indexes a specific fd slot on a specific cmd in the request.
@@ -124,16 +126,17 @@ func (s *Status) UnmarshalJSON(b []byte) error {
 
 // Result defines single command result
 type Result struct {
-	Status     Status            `json:"status"`
-	ExitStatus int               `json:"exitStatus"`
-	Error      string            `json:"error,omitempty"`
-	Time       uint64            `json:"time"`
-	Memory     uint64            `json:"memory"`
-	RunTime    uint64            `json:"runTime"`
-	ProcPeak   uint64            `json:"procPeak,omitempty"`
-	Files      map[string]string `json:"files,omitempty"`
-	FileIDs    map[string]string `json:"fileIds,omitempty"`
-	FileError  []FileError       `json:"fileError,omitempty"`
+	Status        Status               `json:"status"`
+	ExitStatus    int                  `json:"exitStatus"`
+	Error         string               `json:"error,omitempty"`
+	Time          uint64               `json:"time"`
+	Memory        uint64               `json:"memory"`
+	RunTime       uint64               `json:"runTime"`
+	ProcPeak      uint64               `json:"procPeak,omitempty"`
+	Files         map[string]string    `json:"files,omitempty"`
+	FileIDs       map[string]string    `json:"fileIds,omitempty"`
+	FileError     []FileError          `json:"fileError,omitempty"`
+	WorkspaceDiff *WorkspaceDiffResult `json:"workspaceDiff,omitempty"`
 
 	files []string
 	Buffs map[string][]byte `json:"-"`
@@ -277,15 +280,16 @@ func ConvertRequest(r *Request, srcPrefix []string) (*worker.Request, error) {
 
 func convertResult(r worker.Result, mmap bool) (Result, error) {
 	res := Result{
-		Status:     Status(r.Status),
-		ExitStatus: r.ExitStatus,
-		Error:      r.Error,
-		Time:       uint64(r.Time),
-		RunTime:    uint64(r.RunTime),
-		Memory:     uint64(r.Memory),
-		ProcPeak:   r.ProcPeak,
-		FileIDs:    r.FileIDs,
-		FileError:  r.FileError,
+		Status:        Status(r.Status),
+		ExitStatus:    r.ExitStatus,
+		Error:         r.Error,
+		Time:          uint64(r.Time),
+		RunTime:       uint64(r.RunTime),
+		Memory:        uint64(r.Memory),
+		ProcPeak:      r.ProcPeak,
+		FileIDs:       r.FileIDs,
+		FileError:     r.FileError,
+		WorkspaceDiff: workspaceDiffResultFromWorker(r.WorkspaceDiff),
 	}
 	if r.Files != nil {
 		res.Files = make(map[string]string)
@@ -345,6 +349,7 @@ func convertCmd(c Cmd, srcPrefix []string) (worker.Cmd, error) {
 		CopyOutMax:        c.CopyOutMax,
 		CopyOutTruncate:   c.CopyOutTruncate,
 		OutputLimit:       envexec.Size(c.OutputLimit),
+		WorkspaceDiff:     c.WorkspaceDiff.ToWorker(),
 	}
 	for _, f := range c.Files {
 		cf, err := convertCmdFile(f, srcPrefix)

@@ -67,9 +67,13 @@ func (e *execServer) Exec(ctx context.Context, req *pb.Request) (*pb.Response, e
 		ce.Write(zap.String("body", fmt.Sprintf("%+v", rt)))
 	}
 	if rt.Error != nil {
+		model.ReleaseResponse(rt, removeID)
 		code := codes.Internal
 		if errors.Is(rt.Error, worker.ErrFileNotFound) {
 			code = codes.NotFound
+		}
+		if errors.Is(rt.Error, worker.ErrWorkspaceInvalid) {
+			code = codes.InvalidArgument
 		}
 		return nil, status.Error(code, rt.Error.Error())
 	}
@@ -453,16 +457,12 @@ func convertPBResponse(r model.Response) (*pb.Response, error) {
 	}
 	res := b.Build()
 	for _, c := range r.Results {
-		rt, err := convertPBResult(c)
-		if err != nil {
-			return nil, err
-		}
-		res.SetResults(append(res.GetResults(), rt))
+		res.SetResults(append(res.GetResults(), convertPBResult(c)))
 	}
 	return res, nil
 }
 
-func convertPBResult(r model.Result) (*pb.Response_Result, error) {
+func convertPBResult(r model.Result) *pb.Response_Result {
 	b := pb.Response_Result_builder{
 		Status:     pb.Response_Result_StatusType(r.Status),
 		ExitStatus: int32(r.ExitStatus),
@@ -477,7 +477,72 @@ func convertPBResult(r model.Result) (*pb.Response_Result, error) {
 	if r.Error != "" {
 		b.Error = proto.String(r.Error)
 	}
-	return b.Build(), nil
+	if r.WorkspaceDiff != nil {
+		b.WorkspaceDiff = convertPBWorkspaceDiff(r.WorkspaceDiff)
+	}
+	return b.Build()
+}
+
+func convertPBWorkspaceDiff(d *model.WorkspaceDiffResult) *pb.Response_WorkspaceDiffResult {
+	changed := make([]*pb.Response_WorkspaceDiffResult_ChangedFile, 0, len(d.Changed))
+	for _, c := range d.Changed {
+		changed = append(changed, pb.Response_WorkspaceDiffResult_ChangedFile_builder{
+			Path:   c.Path,
+			FileID: c.FileID,
+			Size:   c.Size,
+		}.Build())
+	}
+	skipped := make([]*pb.Response_WorkspaceDiffResult_SkippedEntry, 0, len(d.Skipped))
+	for _, s := range d.Skipped {
+		skipped = append(skipped, pb.Response_WorkspaceDiffResult_SkippedEntry_builder{
+			Path:   s.Path,
+			Reason: workspaceReasonPB(worker.WorkspaceReason(s.Reason)),
+		}.Build())
+	}
+	return pb.Response_WorkspaceDiffResult_builder{
+		Status:       workspaceStatusPB(worker.WorkspaceStatus(d.Status)),
+		Changed:      changed,
+		Removed:      d.Removed,
+		Skipped:      skipped,
+		SkippedTotal: d.SkippedTotal,
+	}.Build()
+}
+
+func workspaceStatusPB(s worker.WorkspaceStatus) pb.Response_WorkspaceDiffResult_Status {
+	switch s {
+	case worker.WorkspaceStatusOK:
+		return pb.Response_WorkspaceDiffResult_OK
+	case worker.WorkspaceStatusTooManyFiles:
+		return pb.Response_WorkspaceDiffResult_TOO_MANY_FILES
+	case worker.WorkspaceStatusTooLarge:
+		return pb.Response_WorkspaceDiffResult_TOO_LARGE
+	default:
+		panic("unknown workspace status " + string(s))
+	}
+}
+
+func workspaceReasonPB(s worker.WorkspaceReason) pb.Response_WorkspaceDiffResult_SkippedEntry_Reason {
+	switch s {
+	case worker.WorkspaceReasonNotRegular:
+		return pb.Response_WorkspaceDiffResult_SkippedEntry_NOT_REGULAR
+	case worker.WorkspaceReasonInvalidPath:
+		return pb.Response_WorkspaceDiffResult_SkippedEntry_INVALID_PATH
+	case worker.WorkspaceReasonOtherFilesystem:
+		return pb.Response_WorkspaceDiffResult_SkippedEntry_OTHER_FILESYSTEM
+	default:
+		panic("unknown workspace skip reason " + string(s))
+	}
+}
+
+func workspaceDiffFromPB(d *pb.Request_WorkspaceDiff) *model.WorkspaceDiff {
+	if d == nil {
+		return nil
+	}
+	return &model.WorkspaceDiff{
+		MaxFileCount: d.GetMaxFileCount(),
+		MaxTotalSize: d.GetMaxTotalSize(),
+		MaxSkipped:   d.GetMaxSkipped(),
+	}
 }
 
 func convertPBFileError(fe []envexec.FileError) []*pb.Response_FileError {
@@ -591,6 +656,7 @@ func convertPBCmd(c *pb.Request_CmdType, srcPrefix []string) (cm worker.Cmd, err
 		CopyOutTruncate:   c.GetCopyOutTruncate(),
 		OutputLimit:       envexec.Size(c.GetOutputLimit()),
 		Symlinks:          c.GetSymlinks(),
+		WorkspaceDiff:     workspaceDiffFromPB(c.GetWorkspaceDiff()).ToWorker(),
 	}
 	for _, f := range c.GetFiles() {
 		cf, err := convertPBFile(f, srcPrefix)

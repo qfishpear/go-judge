@@ -6,6 +6,7 @@ import (
 	"github.com/criyle/go-judge/cmd/go-judge/model"
 	"github.com/criyle/go-judge/cmd/go-judge/stream"
 	"github.com/criyle/go-judge/pb"
+	"github.com/criyle/go-judge/worker"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -90,6 +91,7 @@ func convertPBStreamRequest(req *pb.Request) *model.Request {
 			CopyOutMax:        cmd.GetCopyOutMax(),
 			CopyOutDir:        cmd.GetCopyOutDir(),
 			OutputLimit:       cmd.GetOutputLimit(),
+			WorkspaceDiff:     workspaceDiffFromPB(cmd.GetWorkspaceDiff()),
 			// CopyOutTruncate stays unset. An oversized copyOut fails instead of
 			// keeping a truncated file.
 		})
@@ -187,7 +189,11 @@ func (e *execServer) ExecStream(es pb.Executor_ExecStreamServer) error {
 		es: es,
 	}
 	if err := stream.Start(es.Context(), w, e.worker, e.srcPrefix, e.logger, func(id string) { e.fs.Remove(id) }); err != nil {
-		return status.Error(codes.Internal, err.Error())
+		code := codes.Internal
+		if errors.Is(err, worker.ErrWorkspaceStreaming) {
+			code = codes.InvalidArgument
+		}
+		return status.Error(code, err.Error())
 	}
 	return nil
 }

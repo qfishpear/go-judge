@@ -280,6 +280,10 @@ func (e *Environment) Execve(ctx context.Context, param envexec.ExecveParam) (pr
 func (e *Environment) Open(params []envexec.OpenParam) ([]envexec.OpenResult, error) {
 	results := make([]envexec.OpenResult, len(params))
 	for i, param := range params {
+		if param.OpenDir {
+			results[i] = envexec.OpenResult{Err: errors.New("directory open is only supported on linux")}
+			continue
+		}
 		fullPath := filepath.Join(e.root, param.Path)
 		if param.MkdirAll {
 			if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {

@@ -42,7 +42,7 @@ func (m *mockWorker) Submit(_ context.Context, req *worker.Request) (<-chan work
 
 func TestHandleRunMissingFileReturnsNotFound(t *testing.T) {
 	router := gin.New()
-	cmdHandle := NewCmdHandle(&mockWorker{}, nil, zaptest.NewLogger(t))
+	cmdHandle := NewCmdHandle(&mockWorker{}, nil, zaptest.NewLogger(t), nil)
 	cmdHandle.Register(router)
 
 	src := filepath.Join(t.TempDir(), "missing.txt")
@@ -65,7 +65,7 @@ func TestHandleRunMissingFileReturnsNotFound(t *testing.T) {
 
 func TestHandleRunOtherWorkerErrorReturnsInternalServerError(t *testing.T) {
 	router := gin.New()
-	cmdHandle := NewCmdHandle(&mockWorker{Error: fmt.Errorf("container unavailable")}, nil, zaptest.NewLogger(t))
+	cmdHandle := NewCmdHandle(&mockWorker{Error: fmt.Errorf("container unavailable")}, nil, zaptest.NewLogger(t), nil)
 	cmdHandle.Register(router)
 
 	req := httptest.NewRequest(http.MethodPost, "/run", bytes.NewReader([]byte(`{"cmd":[{"args":["/bin/true"]}]}`)))
@@ -144,7 +144,7 @@ func TestHandleRun(t *testing.T) {
 	// Create a logger
 	logger := zaptest.NewLogger(t)
 	// Create a new command handle
-	cmdHandle := NewCmdHandle(mockWorker, nil, logger)
+	cmdHandle := NewCmdHandle(mockWorker, nil, logger, nil)
 	cmdHandle.Register(router)
 
 	// Create a test request

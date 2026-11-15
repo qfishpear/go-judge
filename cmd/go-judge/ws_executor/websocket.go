@@ -135,6 +135,9 @@ func (h *wsHandle) handleWS(c *gin.Context) {
 			}
 			select {
 			case <-baseCtx.Done():
+				if h.removeFile != nil {
+					model.ReleaseResponse(ret, h.removeFile)
+				}
 			case resultCh <- resp:
 			}
 		}()

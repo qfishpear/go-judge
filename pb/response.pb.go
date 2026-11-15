@@ -162,6 +162,94 @@ func (x Response_Result_StatusType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+type Response_WorkspaceDiffResult_Status int32
+
+const (
+	Response_WorkspaceDiffResult_OK             Response_WorkspaceDiffResult_Status = 0
+	Response_WorkspaceDiffResult_TOO_MANY_FILES Response_WorkspaceDiffResult_Status = 1
+	Response_WorkspaceDiffResult_TOO_LARGE      Response_WorkspaceDiffResult_Status = 2
+)
+
+// Enum value maps for Response_WorkspaceDiffResult_Status.
+var (
+	Response_WorkspaceDiffResult_Status_name = map[int32]string{
+		0: "OK",
+		1: "TOO_MANY_FILES",
+		2: "TOO_LARGE",
+	}
+	Response_WorkspaceDiffResult_Status_value = map[string]int32{
+		"OK":             0,
+		"TOO_MANY_FILES": 1,
+		"TOO_LARGE":      2,
+	}
+)
+
+func (x Response_WorkspaceDiffResult_Status) Enum() *Response_WorkspaceDiffResult_Status {
+	p := new(Response_WorkspaceDiffResult_Status)
+	*p = x
+	return p
+}
+
+func (x Response_WorkspaceDiffResult_Status) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Response_WorkspaceDiffResult_Status) Descriptor() protoreflect.EnumDescriptor {
+	return file_response_proto_enumTypes[2].Descriptor()
+}
+
+func (Response_WorkspaceDiffResult_Status) Type() protoreflect.EnumType {
+	return &file_response_proto_enumTypes[2]
+}
+
+func (x Response_WorkspaceDiffResult_Status) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+type Response_WorkspaceDiffResult_SkippedEntry_Reason int32
+
+const (
+	Response_WorkspaceDiffResult_SkippedEntry_NOT_REGULAR      Response_WorkspaceDiffResult_SkippedEntry_Reason = 0
+	Response_WorkspaceDiffResult_SkippedEntry_INVALID_PATH     Response_WorkspaceDiffResult_SkippedEntry_Reason = 1
+	Response_WorkspaceDiffResult_SkippedEntry_OTHER_FILESYSTEM Response_WorkspaceDiffResult_SkippedEntry_Reason = 2
+)
+
+// Enum value maps for Response_WorkspaceDiffResult_SkippedEntry_Reason.
+var (
+	Response_WorkspaceDiffResult_SkippedEntry_Reason_name = map[int32]string{
+		0: "NOT_REGULAR",
+		1: "INVALID_PATH",
+		2: "OTHER_FILESYSTEM",
+	}
+	Response_WorkspaceDiffResult_SkippedEntry_Reason_value = map[string]int32{
+		"NOT_REGULAR":      0,
+		"INVALID_PATH":     1,
+		"OTHER_FILESYSTEM": 2,
+	}
+)
+
+func (x Response_WorkspaceDiffResult_SkippedEntry_Reason) Enum() *Response_WorkspaceDiffResult_SkippedEntry_Reason {
+	p := new(Response_WorkspaceDiffResult_SkippedEntry_Reason)
+	*p = x
+	return p
+}
+
+func (x Response_WorkspaceDiffResult_SkippedEntry_Reason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Response_WorkspaceDiffResult_SkippedEntry_Reason) Descriptor() protoreflect.EnumDescriptor {
+	return file_response_proto_enumTypes[3].Descriptor()
+}
+
+func (Response_WorkspaceDiffResult_SkippedEntry_Reason) Type() protoreflect.EnumType {
+	return &file_response_proto_enumTypes[3]
+}
+
+func (x Response_WorkspaceDiffResult_SkippedEntry_Reason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type Response struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_RequestID   *string                `protobuf:"bytes,1,opt,name=requestID,proto3,oneof"`
@@ -396,21 +484,22 @@ func (b0 Response_FileError_builder) Build() *Response_FileError {
 }
 
 type Response_Result struct {
-	state                  protoimpl.MessageState     `protogen:"opaque.v1"`
-	xxx_hidden_Status      Response_Result_StatusType `protobuf:"varint,1,opt,name=status,proto3,enum=pb.Response_Result_StatusType"`
-	xxx_hidden_ExitStatus  int32                      `protobuf:"varint,2,opt,name=exitStatus,proto3"`
-	xxx_hidden_Error       *string                    `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
-	xxx_hidden_Time        uint64                     `protobuf:"varint,4,opt,name=time,proto3"`
-	xxx_hidden_RunTime     uint64                     `protobuf:"varint,8,opt,name=runTime,proto3"`
-	xxx_hidden_ProcPeak    uint64                     `protobuf:"varint,10,opt,name=procPeak,proto3"`
-	xxx_hidden_Memory      uint64                     `protobuf:"varint,5,opt,name=memory,proto3"`
-	xxx_hidden_Files       map[string][]byte          `protobuf:"bytes,6,rep,name=files,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_FileIDs     map[string]string          `protobuf:"bytes,7,rep,name=fileIDs,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_FileError   *[]*Response_FileError     `protobuf:"bytes,9,rep,name=fileError,proto3"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                    protoimpl.MessageState        `protogen:"opaque.v1"`
+	xxx_hidden_Status        Response_Result_StatusType    `protobuf:"varint,1,opt,name=status,proto3,enum=pb.Response_Result_StatusType"`
+	xxx_hidden_ExitStatus    int32                         `protobuf:"varint,2,opt,name=exitStatus,proto3"`
+	xxx_hidden_Error         *string                       `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
+	xxx_hidden_Time          uint64                        `protobuf:"varint,4,opt,name=time,proto3"`
+	xxx_hidden_RunTime       uint64                        `protobuf:"varint,8,opt,name=runTime,proto3"`
+	xxx_hidden_ProcPeak      uint64                        `protobuf:"varint,10,opt,name=procPeak,proto3"`
+	xxx_hidden_Memory        uint64                        `protobuf:"varint,5,opt,name=memory,proto3"`
+	xxx_hidden_Files         map[string][]byte             `protobuf:"bytes,6,rep,name=files,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_FileIDs       map[string]string             `protobuf:"bytes,7,rep,name=fileIDs,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_FileError     *[]*Response_FileError        `protobuf:"bytes,9,rep,name=fileError,proto3"`
+	xxx_hidden_WorkspaceDiff *Response_WorkspaceDiffResult `protobuf:"bytes,11,opt,name=workspaceDiff,proto3,oneof"`
+	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
+	XXX_presence             [1]uint32
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Response_Result) Reset() {
@@ -513,6 +602,13 @@ func (x *Response_Result) GetFileError() []*Response_FileError {
 	return nil
 }
 
+func (x *Response_Result) GetWorkspaceDiff() *Response_WorkspaceDiffResult {
+	if x != nil {
+		return x.xxx_hidden_WorkspaceDiff
+	}
+	return nil
+}
+
 func (x *Response_Result) SetStatus(v Response_Result_StatusType) {
 	x.xxx_hidden_Status = v
 }
@@ -523,7 +619,7 @@ func (x *Response_Result) SetExitStatus(v int32) {
 
 func (x *Response_Result) SetError(v string) {
 	x.xxx_hidden_Error = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 10)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
 }
 
 func (x *Response_Result) SetTime(v uint64) {
@@ -554,6 +650,10 @@ func (x *Response_Result) SetFileError(v []*Response_FileError) {
 	x.xxx_hidden_FileError = &v
 }
 
+func (x *Response_Result) SetWorkspaceDiff(v *Response_WorkspaceDiffResult) {
+	x.xxx_hidden_WorkspaceDiff = v
+}
+
 func (x *Response_Result) HasError() bool {
 	if x == nil {
 		return false
@@ -561,24 +661,36 @@ func (x *Response_Result) HasError() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
+func (x *Response_Result) HasWorkspaceDiff() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_WorkspaceDiff != nil
+}
+
 func (x *Response_Result) ClearError() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
 	x.xxx_hidden_Error = nil
 }
 
+func (x *Response_Result) ClearWorkspaceDiff() {
+	x.xxx_hidden_WorkspaceDiff = nil
+}
+
 type Response_Result_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Status     Response_Result_StatusType
-	ExitStatus int32
-	Error      *string
-	Time       uint64
-	RunTime    uint64
-	ProcPeak   uint64
-	Memory     uint64
-	Files      map[string][]byte
-	FileIDs    map[string]string
-	FileError  []*Response_FileError
+	Status        Response_Result_StatusType
+	ExitStatus    int32
+	Error         *string
+	Time          uint64
+	RunTime       uint64
+	ProcPeak      uint64
+	Memory        uint64
+	Files         map[string][]byte
+	FileIDs       map[string]string
+	FileError     []*Response_FileError
+	WorkspaceDiff *Response_WorkspaceDiffResult
 }
 
 func (b0 Response_Result_builder) Build() *Response_Result {
@@ -588,7 +700,7 @@ func (b0 Response_Result_builder) Build() *Response_Result {
 	x.xxx_hidden_Status = b.Status
 	x.xxx_hidden_ExitStatus = b.ExitStatus
 	if b.Error != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 10)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
 		x.xxx_hidden_Error = b.Error
 	}
 	x.xxx_hidden_Time = b.Time
@@ -598,6 +710,284 @@ func (b0 Response_Result_builder) Build() *Response_Result {
 	x.xxx_hidden_Files = b.Files
 	x.xxx_hidden_FileIDs = b.FileIDs
 	x.xxx_hidden_FileError = &b.FileError
+	x.xxx_hidden_WorkspaceDiff = b.WorkspaceDiff
+	return m0
+}
+
+// WorkspaceDiffResult is the diff of /w. changed and removed are set only for OK.
+type Response_WorkspaceDiffResult struct {
+	state                   protoimpl.MessageState                        `protogen:"opaque.v1"`
+	xxx_hidden_Status       Response_WorkspaceDiffResult_Status           `protobuf:"varint,1,opt,name=status,proto3,enum=pb.Response_WorkspaceDiffResult_Status"`
+	xxx_hidden_Changed      *[]*Response_WorkspaceDiffResult_ChangedFile  `protobuf:"bytes,2,rep,name=changed,proto3"`
+	xxx_hidden_Removed      []string                                      `protobuf:"bytes,3,rep,name=removed,proto3"`
+	xxx_hidden_Skipped      *[]*Response_WorkspaceDiffResult_SkippedEntry `protobuf:"bytes,4,rep,name=skipped,proto3"`
+	xxx_hidden_SkippedTotal uint32                                        `protobuf:"varint,5,opt,name=skippedTotal,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *Response_WorkspaceDiffResult) Reset() {
+	*x = Response_WorkspaceDiffResult{}
+	mi := &file_response_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Response_WorkspaceDiffResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Response_WorkspaceDiffResult) ProtoMessage() {}
+
+func (x *Response_WorkspaceDiffResult) ProtoReflect() protoreflect.Message {
+	mi := &file_response_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Response_WorkspaceDiffResult) GetStatus() Response_WorkspaceDiffResult_Status {
+	if x != nil {
+		return x.xxx_hidden_Status
+	}
+	return Response_WorkspaceDiffResult_OK
+}
+
+func (x *Response_WorkspaceDiffResult) GetChanged() []*Response_WorkspaceDiffResult_ChangedFile {
+	if x != nil {
+		if x.xxx_hidden_Changed != nil {
+			return *x.xxx_hidden_Changed
+		}
+	}
+	return nil
+}
+
+func (x *Response_WorkspaceDiffResult) GetRemoved() []string {
+	if x != nil {
+		return x.xxx_hidden_Removed
+	}
+	return nil
+}
+
+func (x *Response_WorkspaceDiffResult) GetSkipped() []*Response_WorkspaceDiffResult_SkippedEntry {
+	if x != nil {
+		if x.xxx_hidden_Skipped != nil {
+			return *x.xxx_hidden_Skipped
+		}
+	}
+	return nil
+}
+
+func (x *Response_WorkspaceDiffResult) GetSkippedTotal() uint32 {
+	if x != nil {
+		return x.xxx_hidden_SkippedTotal
+	}
+	return 0
+}
+
+func (x *Response_WorkspaceDiffResult) SetStatus(v Response_WorkspaceDiffResult_Status) {
+	x.xxx_hidden_Status = v
+}
+
+func (x *Response_WorkspaceDiffResult) SetChanged(v []*Response_WorkspaceDiffResult_ChangedFile) {
+	x.xxx_hidden_Changed = &v
+}
+
+func (x *Response_WorkspaceDiffResult) SetRemoved(v []string) {
+	x.xxx_hidden_Removed = v
+}
+
+func (x *Response_WorkspaceDiffResult) SetSkipped(v []*Response_WorkspaceDiffResult_SkippedEntry) {
+	x.xxx_hidden_Skipped = &v
+}
+
+func (x *Response_WorkspaceDiffResult) SetSkippedTotal(v uint32) {
+	x.xxx_hidden_SkippedTotal = v
+}
+
+type Response_WorkspaceDiffResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Status       Response_WorkspaceDiffResult_Status
+	Changed      []*Response_WorkspaceDiffResult_ChangedFile
+	Removed      []string
+	Skipped      []*Response_WorkspaceDiffResult_SkippedEntry
+	SkippedTotal uint32
+}
+
+func (b0 Response_WorkspaceDiffResult_builder) Build() *Response_WorkspaceDiffResult {
+	m0 := &Response_WorkspaceDiffResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Status = b.Status
+	x.xxx_hidden_Changed = &b.Changed
+	x.xxx_hidden_Removed = b.Removed
+	x.xxx_hidden_Skipped = &b.Skipped
+	x.xxx_hidden_SkippedTotal = b.SkippedTotal
+	return m0
+}
+
+type Response_WorkspaceDiffResult_ChangedFile struct {
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Path   string                 `protobuf:"bytes,1,opt,name=path,proto3"`
+	xxx_hidden_FileID string                 `protobuf:"bytes,2,opt,name=fileID,proto3"`
+	xxx_hidden_Size   uint64                 `protobuf:"varint,3,opt,name=size,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) Reset() {
+	*x = Response_WorkspaceDiffResult_ChangedFile{}
+	mi := &file_response_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Response_WorkspaceDiffResult_ChangedFile) ProtoMessage() {}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) ProtoReflect() protoreflect.Message {
+	mi := &file_response_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) GetPath() string {
+	if x != nil {
+		return x.xxx_hidden_Path
+	}
+	return ""
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) GetFileID() string {
+	if x != nil {
+		return x.xxx_hidden_FileID
+	}
+	return ""
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) GetSize() uint64 {
+	if x != nil {
+		return x.xxx_hidden_Size
+	}
+	return 0
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) SetPath(v string) {
+	x.xxx_hidden_Path = v
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) SetFileID(v string) {
+	x.xxx_hidden_FileID = v
+}
+
+func (x *Response_WorkspaceDiffResult_ChangedFile) SetSize(v uint64) {
+	x.xxx_hidden_Size = v
+}
+
+type Response_WorkspaceDiffResult_ChangedFile_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Path   string
+	FileID string
+	Size   uint64
+}
+
+func (b0 Response_WorkspaceDiffResult_ChangedFile_builder) Build() *Response_WorkspaceDiffResult_ChangedFile {
+	m0 := &Response_WorkspaceDiffResult_ChangedFile{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Path = b.Path
+	x.xxx_hidden_FileID = b.FileID
+	x.xxx_hidden_Size = b.Size
+	return m0
+}
+
+type Response_WorkspaceDiffResult_SkippedEntry struct {
+	state             protoimpl.MessageState                           `protogen:"opaque.v1"`
+	xxx_hidden_Path   []byte                                           `protobuf:"bytes,1,opt,name=path,proto3"`
+	xxx_hidden_Reason Response_WorkspaceDiffResult_SkippedEntry_Reason `protobuf:"varint,2,opt,name=reason,proto3,enum=pb.Response_WorkspaceDiffResult_SkippedEntry_Reason"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *Response_WorkspaceDiffResult_SkippedEntry) Reset() {
+	*x = Response_WorkspaceDiffResult_SkippedEntry{}
+	mi := &file_response_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Response_WorkspaceDiffResult_SkippedEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Response_WorkspaceDiffResult_SkippedEntry) ProtoMessage() {}
+
+func (x *Response_WorkspaceDiffResult_SkippedEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_response_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *Response_WorkspaceDiffResult_SkippedEntry) GetPath() []byte {
+	if x != nil {
+		return x.xxx_hidden_Path
+	}
+	return nil
+}
+
+func (x *Response_WorkspaceDiffResult_SkippedEntry) GetReason() Response_WorkspaceDiffResult_SkippedEntry_Reason {
+	if x != nil {
+		return x.xxx_hidden_Reason
+	}
+	return Response_WorkspaceDiffResult_SkippedEntry_NOT_REGULAR
+}
+
+func (x *Response_WorkspaceDiffResult_SkippedEntry) SetPath(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_Path = v
+}
+
+func (x *Response_WorkspaceDiffResult_SkippedEntry) SetReason(v Response_WorkspaceDiffResult_SkippedEntry_Reason) {
+	x.xxx_hidden_Reason = v
+}
+
+type Response_WorkspaceDiffResult_SkippedEntry_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Path   []byte
+	Reason Response_WorkspaceDiffResult_SkippedEntry_Reason
+}
+
+func (b0 Response_WorkspaceDiffResult_SkippedEntry_builder) Build() *Response_WorkspaceDiffResult_SkippedEntry {
+	m0 := &Response_WorkspaceDiffResult_SkippedEntry{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Path = b.Path
+	x.xxx_hidden_Reason = b.Reason
 	return m0
 }
 
@@ -605,8 +995,7 @@ var File_response_proto protoreflect.FileDescriptor
 
 const file_response_proto_rawDesc = "" +
 	"\n" +
-	"\x0eresponse.proto\x12\x02pb\"\xa8\n" +
-	"\n" +
+	"\x0eresponse.proto\x12\x02pb\"\xe9\x0f\n" +
 	"\bResponse\x12!\n" +
 	"\trequestID\x18\x01 \x01(\tH\x00R\trequestID\x88\x01\x01\x12-\n" +
 	"\aresults\x18\x02 \x03(\v2\x13.pb.Response.ResultR\aresults\x12\x19\n" +
@@ -627,7 +1016,7 @@ const file_response_proto_rawDesc = "" +
 	"\x13CollectSizeExceeded\x10\b\x12\v\n" +
 	"\aSymlink\x10\tB\n" +
 	"\n" +
-	"\b_message\x1a\xaa\x06\n" +
+	"\b_message\x1a\x89\a\n" +
 	"\x06Result\x126\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1e.pb.Response.Result.StatusTypeR\x06status\x12\x1e\n" +
 	"\n" +
@@ -641,7 +1030,8 @@ const file_response_proto_rawDesc = "" +
 	"\x06memory\x18\x05 \x01(\x04R\x06memory\x124\n" +
 	"\x05files\x18\x06 \x03(\v2\x1e.pb.Response.Result.FilesEntryR\x05files\x12:\n" +
 	"\afileIDs\x18\a \x03(\v2 .pb.Response.Result.FileIDsEntryR\afileIDs\x124\n" +
-	"\tfileError\x18\t \x03(\v2\x16.pb.Response.FileErrorR\tfileError\x1a8\n" +
+	"\tfileError\x18\t \x03(\v2\x16.pb.Response.FileErrorR\tfileError\x12K\n" +
+	"\rworkspaceDiff\x18\v \x01(\v2 .pb.Response.WorkspaceDiffResultH\x01R\rworkspaceDiff\x88\x01\x01\x1a8\n" +
 	"\n" +
 	"FilesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -666,34 +1056,66 @@ const file_response_proto_rawDesc = "" +
 	"\x0fJudgementFailed\x10\v\x12\x16\n" +
 	"\x12InvalidInteraction\x10\f\x12\x11\n" +
 	"\rInternalError\x10\rB\b\n" +
-	"\x06_errorB\f\n" +
+	"\x06_errorB\x10\n" +
+	"\x0e_workspaceDiff\x1a\xdf\x04\n" +
+	"\x13WorkspaceDiffResult\x12?\n" +
+	"\x06status\x18\x01 \x01(\x0e2'.pb.Response.WorkspaceDiffResult.StatusR\x06status\x12F\n" +
+	"\achanged\x18\x02 \x03(\v2,.pb.Response.WorkspaceDiffResult.ChangedFileR\achanged\x12\x18\n" +
+	"\aremoved\x18\x03 \x03(\tR\aremoved\x12G\n" +
+	"\askipped\x18\x04 \x03(\v2-.pb.Response.WorkspaceDiffResult.SkippedEntryR\askipped\x12\"\n" +
+	"\fskippedTotal\x18\x05 \x01(\rR\fskippedTotal\x1aM\n" +
+	"\vChangedFile\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
+	"\x06fileID\x18\x02 \x01(\tR\x06fileID\x12\x12\n" +
+	"\x04size\x18\x03 \x01(\x04R\x04size\x1a\xb3\x01\n" +
+	"\fSkippedEntry\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\fR\x04path\x12L\n" +
+	"\x06reason\x18\x02 \x01(\x0e24.pb.Response.WorkspaceDiffResult.SkippedEntry.ReasonR\x06reason\"A\n" +
+	"\x06Reason\x12\x0f\n" +
+	"\vNOT_REGULAR\x10\x00\x12\x10\n" +
+	"\fINVALID_PATH\x10\x01\x12\x14\n" +
+	"\x10OTHER_FILESYSTEM\x10\x02\"3\n" +
+	"\x06Status\x12\x06\n" +
+	"\x02OK\x10\x00\x12\x12\n" +
+	"\x0eTOO_MANY_FILES\x10\x01\x12\r\n" +
+	"\tTOO_LARGE\x10\x02B\f\n" +
 	"\n" +
 	"_requestIDB\b\n" +
 	"\x06_errorB\x1fZ\x1dgithub.com/criyle/go-judge/pbb\x06proto3"
 
-var file_response_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_response_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_response_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_response_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_response_proto_goTypes = []any{
-	(Response_FileError_ErrorType)(0), // 0: pb.Response.FileError.ErrorType
-	(Response_Result_StatusType)(0),   // 1: pb.Response.Result.StatusType
-	(*Response)(nil),                  // 2: pb.Response
-	(*Response_FileError)(nil),        // 3: pb.Response.FileError
-	(*Response_Result)(nil),           // 4: pb.Response.Result
-	nil,                               // 5: pb.Response.Result.FilesEntry
-	nil,                               // 6: pb.Response.Result.FileIDsEntry
+	(Response_FileError_ErrorType)(0),                     // 0: pb.Response.FileError.ErrorType
+	(Response_Result_StatusType)(0),                       // 1: pb.Response.Result.StatusType
+	(Response_WorkspaceDiffResult_Status)(0),              // 2: pb.Response.WorkspaceDiffResult.Status
+	(Response_WorkspaceDiffResult_SkippedEntry_Reason)(0), // 3: pb.Response.WorkspaceDiffResult.SkippedEntry.Reason
+	(*Response)(nil),                                      // 4: pb.Response
+	(*Response_FileError)(nil),                            // 5: pb.Response.FileError
+	(*Response_Result)(nil),                               // 6: pb.Response.Result
+	(*Response_WorkspaceDiffResult)(nil),                  // 7: pb.Response.WorkspaceDiffResult
+	nil,                                                   // 8: pb.Response.Result.FilesEntry
+	nil,                                                   // 9: pb.Response.Result.FileIDsEntry
+	(*Response_WorkspaceDiffResult_ChangedFile)(nil),  // 10: pb.Response.WorkspaceDiffResult.ChangedFile
+	(*Response_WorkspaceDiffResult_SkippedEntry)(nil), // 11: pb.Response.WorkspaceDiffResult.SkippedEntry
 }
 var file_response_proto_depIdxs = []int32{
-	4, // 0: pb.Response.results:type_name -> pb.Response.Result
-	0, // 1: pb.Response.FileError.type:type_name -> pb.Response.FileError.ErrorType
-	1, // 2: pb.Response.Result.status:type_name -> pb.Response.Result.StatusType
-	5, // 3: pb.Response.Result.files:type_name -> pb.Response.Result.FilesEntry
-	6, // 4: pb.Response.Result.fileIDs:type_name -> pb.Response.Result.FileIDsEntry
-	3, // 5: pb.Response.Result.fileError:type_name -> pb.Response.FileError
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	6,  // 0: pb.Response.results:type_name -> pb.Response.Result
+	0,  // 1: pb.Response.FileError.type:type_name -> pb.Response.FileError.ErrorType
+	1,  // 2: pb.Response.Result.status:type_name -> pb.Response.Result.StatusType
+	8,  // 3: pb.Response.Result.files:type_name -> pb.Response.Result.FilesEntry
+	9,  // 4: pb.Response.Result.fileIDs:type_name -> pb.Response.Result.FileIDsEntry
+	5,  // 5: pb.Response.Result.fileError:type_name -> pb.Response.FileError
+	7,  // 6: pb.Response.Result.workspaceDiff:type_name -> pb.Response.WorkspaceDiffResult
+	2,  // 7: pb.Response.WorkspaceDiffResult.status:type_name -> pb.Response.WorkspaceDiffResult.Status
+	10, // 8: pb.Response.WorkspaceDiffResult.changed:type_name -> pb.Response.WorkspaceDiffResult.ChangedFile
+	11, // 9: pb.Response.WorkspaceDiffResult.skipped:type_name -> pb.Response.WorkspaceDiffResult.SkippedEntry
+	3,  // 10: pb.Response.WorkspaceDiffResult.SkippedEntry.reason:type_name -> pb.Response.WorkspaceDiffResult.SkippedEntry.Reason
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_response_proto_init() }
@@ -709,8 +1131,8 @@ func file_response_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_response_proto_rawDesc), len(file_response_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   5,
+			NumEnums:      4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

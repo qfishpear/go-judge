@@ -2,6 +2,7 @@ package macsandbox
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -135,6 +136,10 @@ func (e *environment) Execve(c context.Context, param envexec.ExecveParam) (enve
 func (e *environment) Open(params []envexec.OpenParam) ([]envexec.OpenResult, error) {
 	results := make([]envexec.OpenResult, len(params))
 	for i, param := range params {
+		if param.OpenDir {
+			results[i] = envexec.OpenResult{Err: errors.New("directory open is only supported on linux")}
+			continue
+		}
 		fullPath := filepath.Join(e.wdPath, param.Path)
 		if param.MkdirAll {
 			if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {

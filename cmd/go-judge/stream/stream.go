@@ -228,6 +228,11 @@ func convertStreamRequest(m *model.Request, srcPrefix []string) (req *worker.Req
 			streamOut = nil
 		}
 	}()
+	for _, c := range m.Cmd {
+		if c.WorkspaceDiff != nil {
+			return nil, nil, nil, worker.ErrWorkspaceStreaming
+		}
+	}
 	var streams []cmdStream
 	for i, c := range m.Cmd {
 		for j, f := range c.Files {

@@ -54,6 +54,35 @@ message Response {
     map<string, bytes> files = 6;
     map<string, string> fileIDs = 7;
     repeated FileError fileError = 9;
+    optional WorkspaceDiffResult workspaceDiff = 11;
+  }
+
+  // WorkspaceDiffResult is the diff of /w. changed and removed are set only for OK.
+  message WorkspaceDiffResult {
+    enum Status {
+      OK = 0;
+      TOO_MANY_FILES = 1;
+      TOO_LARGE = 2;
+    }
+    message ChangedFile {
+      string path = 1;
+      string fileID = 2;
+      uint64 size = 3;
+    }
+    message SkippedEntry {
+      enum Reason {
+        NOT_REGULAR = 0;
+        INVALID_PATH = 1;
+        OTHER_FILESYSTEM = 2;
+      }
+      bytes path = 1;
+      Reason reason = 2;
+    }
+    Status status = 1;
+    repeated ChangedFile changed = 2;
+    repeated string removed = 3;
+    repeated SkippedEntry skipped = 4;
+    uint32 skippedTotal = 5;
   }
   optional string requestID = 1;
   repeated Result results = 2;

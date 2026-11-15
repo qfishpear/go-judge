@@ -1,0 +1,81 @@
+diff -ruN a/container/container_cmd_linux.go b/container/container_cmd_linux.go
+--- a/container/container_cmd_linux.go	2026-11-15 07:24:53.779117720 +0800
++++ b/container/container_cmd_linux.go	2026-11-15 07:24:53.785350776 +0800
+@@ -7,6 +7,7 @@
+ 	"os"
+ 	"path/filepath"
+ 	"strings"
++	"syscall"
+ 
+ 	"github.com/criyle/go-sandbox/pkg/unixsocket"
+ )
+@@ -46,19 +47,28 @@
+ 	fileToClose := make([]*os.File, 0, len(open)) // let sendMsg close these files
+ 	openErrors := make([]string, len(open))
+ 	for i, o := range open {
+-		if o.MkdirAll {
+-			dir := filepath.Dir(o.Path)
+-			if err := os.MkdirAll(dir, 0777); err != nil {
+-				openErrors[i] = "mkdir: " + err.Error()
++		var outFile *os.File
++		var err error
++		if o.OpenDir {
++			if o.MkdirAll {
++				openErrors[i] = "open: directory open cannot create directories"
+ 				continue
+ 			}
++			outFile, err = openDirectory(o.Path)
++		} else {
++			if o.MkdirAll {
++				dir := filepath.Dir(o.Path)
++				if err = os.MkdirAll(dir, 0777); err != nil {
++					openErrors[i] = "mkdir: " + err.Error()
++					continue
++				}
++			}
++			if err = checkOpenTargetFile(o.Path); err != nil {
++				openErrors[i] = err.Error()
++				continue
++			}
++			outFile, err = os.OpenFile(o.Path, o.Flag, o.Perm)
+ 		}
+-		if err := checkOpenTargetFile(o.Path); err != nil {
+-			openErrors[i] = err.Error()
+-			continue
+-		}
+-
+-		outFile, err := os.OpenFile(o.Path, o.Flag, o.Perm)
+ 		if err != nil {
+ 			openErrors[i] = err.Error()
+ 			continue
+@@ -70,6 +80,17 @@
+ 	return c.sendReplyFiles(reply{BatchErrors: openErrors}, unixsocket.Msg{Fds: fds}, fileToClose)
+ }
+ 
++func openDirectory(path string) (*os.File, error) {
++	fi, err := os.Lstat(path)
++	if err != nil {
++		return nil, err
++	}
++	if !fi.IsDir() {
++		return nil, fmt.Errorf("%s is not a directory", path)
++	}
++	return os.OpenFile(path, os.O_RDONLY|syscall.O_DIRECTORY|syscall.O_NOFOLLOW, 0)
++}
++
+ func checkOpenTargetFile(path string) error {
+ 	fi, err := os.Lstat(path)
+ 	if err != nil {
+diff -ruN a/container/protocol_linux.go b/container/protocol_linux.go
+--- a/container/protocol_linux.go	2026-11-15 07:24:53.776699045 +0800
++++ b/container/protocol_linux.go	2026-11-15 07:24:53.782992136 +0800
+@@ -29,6 +29,9 @@
+ 	Flag     int
+ 	Perm     os.FileMode
+ 	MkdirAll bool
++	// OpenDir returns a directory fd. Flag and Perm are ignored.
++	// The final path component must already be a directory and is not followed.
++	OpenDir bool
+ }
+ 
+ // OpenCmdResult represent the result of a open command, it could be either

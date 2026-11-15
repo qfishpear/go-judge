@@ -1,0 +1,27 @@
+# Shared path-rule cases, read by worker/workspace_test.go and by path-test.c
+# during the image build. Each line is "<1 ok | 0 bad> [lowercase hex bytes]".
+# A line with no hex is the empty path.
+
+1 61
+1 612f62
+1 612f622f63
+1 2e68696464656e
+1 612062
+1 7f
+1 e4b8ade69687
+1 c3a9
+1 65cc81
+1 612f622d635f642e747874
+0
+0 2f61
+0 612f
+0 612f2f62
+0 2e
+0 2e2e
+0 612f2e
+0 612f2e2e
+0 612f2e2e2f62
+0 610062
+0 610162
+0 ff
+0 c080

@@ -15,6 +15,13 @@ func ReleaseResponse(rt worker.Response, removeID func(string)) {
 		for _, id := range res.FileIDs {
 			removeID(id)
 		}
+		if res.WorkspaceDiff != nil {
+			for _, c := range res.WorkspaceDiff.Changed {
+				if c.FileID != "" {
+					removeID(c.FileID)
+				}
+			}
+		}
 		for _, f := range res.Files {
 			f.Close()
 			os.Remove(f.Name())

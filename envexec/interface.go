@@ -60,6 +60,9 @@ type OpenParam struct {
 	Flag     int
 	Perm     os.FileMode
 	MkdirAll bool
+	// OpenDir asks for a directory fd. Flag and Perm are ignored.
+	// The final path component must already be a directory and is not followed.
+	OpenDir bool
 }
 
 // OpenResult represent a result from a open call, it should

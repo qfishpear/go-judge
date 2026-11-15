@@ -43,6 +43,8 @@ type Cmd struct {
 	TTY               bool
 	DataSegmentLimit  bool
 	AddressSpaceLimit bool
+
+	WorkspaceDiff *WorkspaceDiff
 }
 
 // Request defines single worker request
@@ -55,16 +57,17 @@ type Request struct {
 
 // Result defines single command response
 type Result struct {
-	Status     envexec.Status
-	ExitStatus int
-	Error      string
-	Time       time.Duration
-	RunTime    time.Duration
-	Memory     Size
-	ProcPeak   uint64
-	Files      map[string]*os.File
-	FileIDs    map[string]string
-	FileError  []FileError
+	Status        envexec.Status
+	ExitStatus    int
+	Error         string
+	Time          time.Duration
+	RunTime       time.Duration
+	Memory        Size
+	ProcPeak      uint64
+	Files         map[string]*os.File
+	FileIDs       map[string]string
+	FileError     []FileError
+	WorkspaceDiff *WorkspaceDiffResult
 }
 
 // Response defines worker response for single request
@@ -86,6 +89,7 @@ func (r Result) String() string {
 		Files      map[string]string
 		FileIDs    map[string]string
 		FileError  []FileError
+		Workspace  string
 	}
 	d := Result{
 		Status:     r.Status,
@@ -98,6 +102,9 @@ func (r Result) String() string {
 		Files:      make(map[string]string),
 		FileIDs:    r.FileIDs,
 		FileError:  r.FileError,
+	}
+	if r.WorkspaceDiff != nil {
+		d.Workspace = string(r.WorkspaceDiff.Status)
 	}
 	for k, v := range r.Files {
 		d.Files[k] = filepath.Base(v.Name())

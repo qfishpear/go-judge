@@ -13,17 +13,19 @@ import (
 )
 
 type cmdHandle struct {
-	worker    worker.Worker
-	srcPrefix []string
-	logger    *zap.Logger
+	worker     worker.Worker
+	srcPrefix  []string
+	logger     *zap.Logger
+	removeFile func(string)
 }
 
 // NewCmdHandle creates a new command handle
-func NewCmdHandle(worker worker.Worker, srcPrefix []string, logger *zap.Logger) Register {
+func NewCmdHandle(worker worker.Worker, srcPrefix []string, logger *zap.Logger, removeFile func(string)) Register {
 	return &cmdHandle{
-		worker:    worker,
-		srcPrefix: srcPrefix,
-		logger:    logger,
+		worker:     worker,
+		srcPrefix:  srcPrefix,
+		logger:     logger,
+		removeFile: removeFile,
 	}
 }
 
@@ -59,14 +61,22 @@ func (c *cmdHandle) handleRun(ctx *gin.Context) {
 	}
 	rtCh, _ := c.worker.Submit(ctx.Request.Context(), r)
 	rt := <-rtCh
+	if ctx.Request.Context().Err() != nil {
+		c.release(rt)
+		return
+	}
 	if ce := c.logger.Check(zap.DebugLevel, "response"); ce != nil {
 		ce.Write(zap.String("body", fmt.Sprintf("%+v", rt)))
 	}
 	if rt.Error != nil {
+		c.release(rt)
 		ctx.Error(rt.Error)
 		statusCode := http.StatusInternalServerError
 		if errors.Is(rt.Error, worker.ErrFileNotFound) {
 			statusCode = http.StatusNotFound
+		}
+		if errors.Is(rt.Error, worker.ErrWorkspaceInvalid) {
+			statusCode = http.StatusBadRequest
 		}
 		ctx.AbortWithStatusJSON(statusCode, rt.Error.Error())
 		return
@@ -78,13 +88,27 @@ func (c *cmdHandle) handleRun(ctx *gin.Context) {
 
 	res, err := model.ConvertResponse(rt, true)
 	if err != nil {
+		c.release(rt)
 		ctx.Error(err)
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 	defer res.Close()
+	if ctx.Request.Context().Err() != nil {
+		c.release(rt)
+		return
+	}
 
 	if err := json.NewEncoder(ctx.Writer).Encode(res.Results); err != nil {
 		ctx.Error(err)
+		if ctx.Request.Context().Err() != nil {
+			c.release(rt)
+		}
+	}
+}
+
+func (c *cmdHandle) release(rt worker.Response) {
+	if c.removeFile != nil {
+		model.ReleaseResponse(rt, c.removeFile)
 	}
 }

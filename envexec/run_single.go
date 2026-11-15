@@ -34,6 +34,18 @@ func runSingle(pc context.Context, c *Cmd, fds []*os.File, ptc []pipeCollector, 
 		resultFileError(err, fe)
 		return result, nil
 	}
+	if c.AfterCopyIn != nil {
+		if err := c.AfterCopyIn(pc, m); err != nil {
+			if pc.Err() != nil {
+				closePipes(ptc)
+				closeFiles(fds...)
+				return result, pc.Err()
+			}
+			resultFileError(err, nil)
+			result.Status = StatusInternalError
+			return result, nil
+		}
+	}
 
 	// run cmd and wait for result
 	rt := runSingleWait(pc, m, c, fds)

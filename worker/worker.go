@@ -38,6 +38,7 @@ type Config struct {
 	ShmMaxSize            envexec.Size
 	ExecObserver          func(Response)
 	CPUSets               []string
+	ContainerWorkDir      string
 }
 
 // Worker defines interface for executor
@@ -73,6 +74,8 @@ type worker struct {
 
 	execObserver func(Response)
 
+	containerWorkDir string
+
 	startOnce sync.Once
 	stopOnce  sync.Once
 	stateMu   sync.RWMutex
@@ -105,6 +108,7 @@ func New(conf Config) Worker {
 		shmMaxSize:            conf.ShmMaxSize,
 		cpuSets:               conf.CPUSets,
 		execObserver:          conf.ExecObserver,
+		containerWorkDir:      conf.ContainerWorkDir,
 	}
 }
 
@@ -227,7 +231,9 @@ func (w *worker) workDoCmd(ctx context.Context, req *Request, cpuset string) Res
 	defer w.running.Add(-1)
 
 	var rt Response
-	if err := w.validateShmMapping(req.ShmMapping); err != nil {
+	if err := w.checkWorkspace(req); err != nil {
+		rt = Response{Error: err}
+	} else if err := w.validateShmMapping(req.ShmMapping); err != nil {
 		rt = Response{Error: err}
 	} else if len(req.Cmd) == 1 && len(req.ShmMapping) == 0 {
 		rt = w.workDoSingle(ctx, req.Cmd[0], cpuset)
@@ -281,6 +287,11 @@ func (w *worker) workDoSingle(ctx context.Context, rc Cmd, cpuset string) (rt Re
 	}
 	defer w.envPool.Put(env)
 	c.Environment = env
+	// Nil unless this command asked for a workspace diff.
+	ws := w.newWorkspaceSession(rc.WorkspaceDiff)
+	if ws != nil {
+		c.AfterCopyIn = ws.baseline
+	}
 
 	s := &envexec.Single{
 		Cmd:          c,
@@ -292,6 +303,9 @@ func (w *worker) workDoSingle(ctx context.Context, rc Cmd, cpuset string) (rt Re
 		return
 	}
 	res := w.convertResult(result, rc)
+	if ws != nil {
+		ws.finish(ctx, env, result, &res)
+	}
 	rt.Results = []Result{res}
 	return
 }

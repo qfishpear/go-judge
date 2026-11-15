@@ -72,6 +72,8 @@ require (
 
 replace github.com/criyle/go-judge/pb => ./pb
 
+replace github.com/criyle/go-sandbox => ./third_party/go-sandbox
+
 retract (
 	// File descripter leak when multiple container fork at the same time
 	[v0.9.5, v1.1.4]
