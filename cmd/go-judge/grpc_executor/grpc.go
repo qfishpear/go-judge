@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/criyle/go-judge/cmd/go-judge/model"
 	"github.com/criyle/go-judge/envexec"
@@ -495,7 +496,7 @@ func convertPBWorkspaceDiff(d *model.WorkspaceDiffResult) *pb.Response_Workspace
 	skipped := make([]*pb.Response_WorkspaceDiffResult_SkippedEntry, 0, len(d.Skipped))
 	for _, s := range d.Skipped {
 		skipped = append(skipped, pb.Response_WorkspaceDiffResult_SkippedEntry_builder{
-			Path:   s.Path,
+			Path:   escapeSkippedPath(s.Path),
 			Reason: workspaceReasonPB(worker.WorkspaceReason(s.Reason)),
 		}.Build())
 	}
@@ -519,6 +520,35 @@ func workspaceStatusPB(s worker.WorkspaceStatus) pb.Response_WorkspaceDiffResult
 	default:
 		panic("unknown workspace status " + string(s))
 	}
+}
+
+// escapeSkippedPath renders a raw skipped path as valid UTF-8. A backslash
+// becomes \\, and a C0 control, DEL or byte that does not start a well-formed
+// UTF-8 sequence becomes \xHH. The real U+FFFD encoding is kept.
+func escapeSkippedPath(raw []byte) string {
+	var out strings.Builder
+	out.Grow(len(raw))
+	for i := 0; i < len(raw); {
+		b := raw[i]
+		switch {
+		case b == '\\':
+			out.WriteString(`\\`)
+			i++
+		case b < 0x20 || b == 0x7f:
+			fmt.Fprintf(&out, `\x%02x`, b)
+			i++
+		default:
+			r, size := utf8.DecodeRune(raw[i:])
+			if r == utf8.RuneError && size == 1 {
+				fmt.Fprintf(&out, `\x%02x`, b)
+				i++
+				continue
+			}
+			out.Write(raw[i : i+size])
+			i += size
+		}
+	}
+	return out.String()
 }
 
 func workspaceReasonPB(s worker.WorkspaceReason) pb.Response_WorkspaceDiffResult_SkippedEntry_Reason {

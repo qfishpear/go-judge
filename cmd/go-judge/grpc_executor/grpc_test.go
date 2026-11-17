@@ -109,3 +109,28 @@ func TestConvertPBCachedFilePreservesForceCopy(t *testing.T) {
 		t.Fatalf("unexpected stream cached file: %#v", stream)
 	}
 }
+
+func TestEscapeSkippedPath(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  []byte
+		want string
+	}{
+		{name: "plain", raw: []byte("a/b"), want: "a/b"},
+		{name: "backslash", raw: []byte(`a\b`), want: `a\\b`},
+		{name: "newline", raw: []byte("bad\n"), want: `bad\x0a`},
+		{name: "del", raw: []byte{0x7f}, want: `\x7f`},
+		{name: "utf8", raw: []byte("中"), want: "中"},
+		{name: "replacement", raw: []byte{0xef, 0xbf, 0xbd}, want: "\uFFFD"},
+		{name: "invalid", raw: []byte{'b', 'a', 'd', 0xff, 'n'}, want: `bad\xffn`},
+		{name: "overlong", raw: []byte{0xc0, 0x80}, want: `\xc0\x80`},
+		{name: "surrogate", raw: []byte{0xed, 0xa0, 0x80}, want: `\xed\xa0\x80`},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := escapeSkippedPath(tc.raw); got != tc.want {
+				t.Fatalf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

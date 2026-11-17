@@ -75,7 +75,8 @@ message Response {
         INVALID_PATH = 1;
         OTHER_FILESYSTEM = 2;
       }
-      bytes path = 1;
+      // Non-UTF-8 bytes, C0 controls, DEL and backslash are escaped as \xHH and \\.
+      string path = 1;
       Reason reason = 2;
     }
     Status status = 1;

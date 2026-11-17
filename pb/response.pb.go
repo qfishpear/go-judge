@@ -919,7 +919,7 @@ func (b0 Response_WorkspaceDiffResult_ChangedFile_builder) Build() *Response_Wor
 
 type Response_WorkspaceDiffResult_SkippedEntry struct {
 	state             protoimpl.MessageState                           `protogen:"opaque.v1"`
-	xxx_hidden_Path   []byte                                           `protobuf:"bytes,1,opt,name=path,proto3"`
+	xxx_hidden_Path   string                                           `protobuf:"bytes,1,opt,name=path,proto3"`
 	xxx_hidden_Reason Response_WorkspaceDiffResult_SkippedEntry_Reason `protobuf:"varint,2,opt,name=reason,proto3,enum=pb.Response_WorkspaceDiffResult_SkippedEntry_Reason"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -950,11 +950,11 @@ func (x *Response_WorkspaceDiffResult_SkippedEntry) ProtoReflect() protoreflect.
 	return mi.MessageOf(x)
 }
 
-func (x *Response_WorkspaceDiffResult_SkippedEntry) GetPath() []byte {
+func (x *Response_WorkspaceDiffResult_SkippedEntry) GetPath() string {
 	if x != nil {
 		return x.xxx_hidden_Path
 	}
-	return nil
+	return ""
 }
 
 func (x *Response_WorkspaceDiffResult_SkippedEntry) GetReason() Response_WorkspaceDiffResult_SkippedEntry_Reason {
@@ -964,10 +964,7 @@ func (x *Response_WorkspaceDiffResult_SkippedEntry) GetReason() Response_Workspa
 	return Response_WorkspaceDiffResult_SkippedEntry_NOT_REGULAR
 }
 
-func (x *Response_WorkspaceDiffResult_SkippedEntry) SetPath(v []byte) {
-	if v == nil {
-		v = []byte{}
-	}
+func (x *Response_WorkspaceDiffResult_SkippedEntry) SetPath(v string) {
 	x.xxx_hidden_Path = v
 }
 
@@ -978,7 +975,8 @@ func (x *Response_WorkspaceDiffResult_SkippedEntry) SetReason(v Response_Workspa
 type Response_WorkspaceDiffResult_SkippedEntry_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Path   []byte
+	// Non-UTF-8 bytes, C0 controls, DEL and backslash are escaped as \xHH and \\.
+	Path   string
 	Reason Response_WorkspaceDiffResult_SkippedEntry_Reason
 }
 
@@ -1069,7 +1067,7 @@ const file_response_proto_rawDesc = "" +
 	"\x06fileID\x18\x02 \x01(\tR\x06fileID\x12\x12\n" +
 	"\x04size\x18\x03 \x01(\x04R\x04size\x1a\xb3\x01\n" +
 	"\fSkippedEntry\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\fR\x04path\x12L\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12L\n" +
 	"\x06reason\x18\x02 \x01(\x0e24.pb.Response.WorkspaceDiffResult.SkippedEntry.ReasonR\x06reason\"A\n" +
 	"\x06Reason\x12\x0f\n" +
 	"\vNOT_REGULAR\x10\x00\x12\x10\n" +
